@@ -220,6 +220,5 @@ src=st.text_input('','ここに翻訳したい日本語を入力してくださ�
 des = translator.translate(src, dest='en')
 '英語では　：',des.text
 'かな読みは：',transKana(des.text, cur)
-#EOF
 
 #EOF
