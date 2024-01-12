@@ -217,8 +217,9 @@ conn = sqlite3.connect('./en2kana_db.db')
 cur = conn.cursor()
 st.title("どんぐり変換")
 src=st.text_input('','ここに翻訳したい日本語を入力してください')
-des = translator.translate(src, dest='en')
-'英語では　：',des.text
-'かな読みは：',transKana(des.text, cur)
+if src != '':
+    des = translator.translate(src, dest='en')
+    '英語では　：',des.text
+    'かな読みは：',transKana(des.text, cur)
 
 #EOF
