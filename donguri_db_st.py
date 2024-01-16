@@ -225,7 +225,7 @@ if 'input_text' not in st.session_state:
     st.session_state['input_text'] = ''
     
 st.title("どんぐり変換")
-src=st.text_input('', value=st.session_state['input_text'])
+src=st.text_input('', st.session_state['input_text'])
 if st.button('クリア'):
     st.session_state['input_text'] = ''
 if src != '':
