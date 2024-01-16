@@ -6,6 +6,9 @@ import os
 import re
 import sqlite3
 from googletrans import Translator
+import firebase_admin
+from firebase_admin import credentials
+from firebase_admin import firestore
 
 # ローマ字 ⇔ かな変換で使用
 # オリジナルはpython2用のため、マーク(org:>)の箇所を listでキャストする
@@ -195,31 +198,33 @@ romaji2katakana, romaji2hiragana, kana2romaji = _make_romaji_convertor()
 
 ################################################################################
 
-def getKanadoc(keyword, cur):
-    key = re.sub("'","''",keyword)
-    cur.execute("select kana from en2kana where en='" + key + "'")
-    rows = cur.fetchall()
-    if len(rows) == 0:
-        retword = romaji2hiragana(keyword)
+def getKanadoc(keyword, db):
+    docs = db.collection('en2kana_db').where('en', '==', keyword).stream()
+    doc = next(docs, None)
+    if doc:
+        retword = doc.to_dict().get('kana')
     else:
-        retword = rows[0][0]
+        retword = romaji2hiragana(keyword)
     return retword
 
-def transKana(doc, cur):
+def transKana(doc, db):
     words = re.split('[.,?？ \n]', doc)
     kanadoc = ''
     for word in words:
-        kanadoc = kanadoc + getKanadoc(word, cur) + ' '
+        kanadoc = kanadoc + getKanadoc(word, db) + ' '
     return kanadoc
 
 translator = Translator()
-conn = sqlite3.connect('./en2kana_db.db')
-cur = conn.cursor()
+
+if not firebase_admin._apps:
+    cred = credentials.Certificate("./donguri-22fdb-firebase-adminsdk-ztyat-41dc93f768.json")
+    firebase_admin.initialize_app(cred)
+db = firestore.client()
+
 st.title("どんぐり変換")
 src=st.text_input('','ここに翻訳したい日本語を入力してください')
 if src != '':
     des = translator.translate(src, dest='en')
     '英語では　：',des.text
-    'かな読みは：',transKana(des.text, cur)
-
+    'かな読みは：',transKana(des.text, db)
 #EOF
