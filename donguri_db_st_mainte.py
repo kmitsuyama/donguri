@@ -1,67 +1,57 @@
 import streamlit as st
-import sqlite3
+import firebase_admin
+from firebase_admin import credentials
+from firebase_admin import firestore
 import pandas as pd
 
-# データベース接続を確立する関数
-def create_connection(db_path):
-    conn = None
-    try:
-        conn = sqlite3.connect(db_path)
-    except sqlite3.Error as e:
-        st.error(e)
-    return conn
+# Firebaseの初期化
+if not firebase_admin._apps:
+    cred = credentials.Certificate("./donguri-22fdb-firebase-adminsdk-ztyat-41dc93f768.json")
+    firebase_admin.initialize_app(cred)
+db = firestore.client()
 
-# レコードを検索する関数
-def search_records(conn, en):
-    query = "SELECT * FROM en2kana WHERE en = ?"
-    df = pd.read_sql_query(query, conn, params=(en,))
-    return df
+# Streamlitのレイアウトを定義
+st.title('どんぐりデータベースのメンテ')
 
-# レコードを追加する関数
-def add_record(conn, en, kana):
-    query = "INSERT INTO en2kana (en, kana) VALUES (?, ?)"
-    try:
-        conn.execute(query, (en, kana))
-        conn.commit()
-        st.success("レコードが追加されました")
-    except sqlite3.Error as e:
-        st.error(e)
+# ドキュメントを検索する機能
+st.subheader('検索')
+with st.form('検索フォーム'):
+    search_en = st.text_input('英語を入力してください')
+    search_submitted = st.form_submit_button('実行')
+    if search_submitted and search_en:
+        docs = db.collection('en2kana_db').where('en', '==', search_en).stream()
+        data = []
+        for doc in docs:
+            doc_data = doc.to_dict()
+            doc_data['doc_id'] = doc.id
+            data.append(doc_data)
+        df = pd.DataFrame(data)
+        st.write(df)
 
-# レコードを更新する関数
-def update_record(conn, en, kana):
-    query = "UPDATE en2kana SET kana = ? WHERE en = ?"
-    try:
-        conn.execute(query, (kana, en))
-        conn.commit()
-        st.success("レコードが更新されました")
-    except sqlite3.Error as e:
-        st.error(e)
+# ドキュメントを追加する機能
+st.subheader('追加')
+with st.form('追加フォーム'):
+    en = st.text_input('英語を入力してください')
+    kana = st.text_input('かな表現を入力してください')
+    submitted = st.form_submit_button('実行')
+    if submitted and en and kana:
+        db.collection('en2kana_db').add({'en': en, 'kana': kana})
+        st.success('Document added successfully!')
 
-# Streamlit UI
-def main():
-    st.title("en2kana データベース管理アプリ")
 
-    db_path = './en2kana_db.db'
-    conn = create_connection(db_path)
-
-    if conn:
-        st.subheader("レコードを検索")
-        search_en = st.text_input("検索する英語の単語を入力してください:")
-        if st.button("検索"):
-            df = search_records(conn, search_en)
-            st.write(df)
-
-        st.subheader("レコードを追加")
-        add_en = st.text_input("追加する英語の単語を入力してください:")
-        add_kana = st.text_input("追加するカナを入力してください:")
-        if st.button("追加"):
-            add_record(conn, add_en, add_kana)
-
-        st.subheader("レコードを更新")
-        update_en = st.text_input("更新する英語の単語を入力してください:")
-        update_kana = st.text_input("新しいカナを入力してください:")
-        if st.button("更新"):
-            update_record(conn, update_en, update_kana)
-
-if __name__ == "__main__":
-    main()
+# ドキュメントを更新する機能
+st.subheader('更新')
+with st.form('更新フォーム'):
+    doc_id = st.text_input('ドキュメントIDを入力してください')
+    new_en = st.text_input('英語を入力してください')
+    new_kana = st.text_input('かな表現を入力してください')
+    update_submitted = st.form_submit_button('実行')
+    if update_submitted and doc_id:
+        updates = {}
+        if new_en:
+            updates['en'] = new_en
+        if new_kana:
+            updates['kana'] = new_kana
+        if updates:
+            db.collection('en2kana_db').document(doc_id).update(updates)
+            st.success('Document updated successfully!')
