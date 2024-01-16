@@ -212,7 +212,7 @@ def transKana(doc, db):
     kanadoc = ''
     for word in words:
         kanadoc = kanadoc + '/' + getKanadoc(word, db)
-    return kanadoc[2:]
+    return kanadoc[1:]
 
 translator = Translator()
 
