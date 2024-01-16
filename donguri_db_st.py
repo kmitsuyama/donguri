@@ -221,8 +221,13 @@ if not firebase_admin._apps:
     firebase_admin.initialize_app(cred)
 db = firestore.client()
 
+if 'input_text' not in st.session_state:
+    st.session_state['input_text'] = ''
+    
 st.title("どんぐり変換")
-src=st.text_input('','ここに翻訳したい日本語を入力してください')
+src=st.text_input('', value=st.session_state['input_text'])
+if st.button('クリア'):
+    st.session_state['input_text'] = ''
 if src != '':
     des = translator.translate(src, dest='en')
     '英語では　：',des.text
