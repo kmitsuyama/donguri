@@ -229,6 +229,6 @@ if src != '':
     '英語では　：',des.text
     'かな読みは：',transKana(des.text, db)
 if submit_clear :
-    st.experimental_rerun()
+    st.rerun()
 
 #EOF
