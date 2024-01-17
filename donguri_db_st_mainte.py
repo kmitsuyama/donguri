@@ -11,7 +11,7 @@ if not firebase_admin._apps:
 db = firestore.client()
 
 # Streamlitのレイアウトを定義
-st.title('どんぐりデータベースのメンテ')
+st.title('どんぐり変換のメンテ')
 
 # ドキュメントを検索する機能
 st.subheader('検索')
