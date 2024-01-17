@@ -223,9 +223,11 @@ db = firestore.client()
     
 st.title("どんぐり変換")
 src=st.text_input('ここ(▼▼)に変換する日本語を入れてください', value='')
+submit_clear=st.button('クリア')
 if src != '':
     des = translator.translate(src, dest='en')
     '英語では　：',des.text
     'かな読みは：',transKana(des.text, db)
-
+if submit_clear :
+    st.experimental_rerun()
 #EOF
