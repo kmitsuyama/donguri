@@ -222,7 +222,7 @@ if not firebase_admin._apps:
 db = firestore.client()
     
 st.title("どんぐり変換")
-src=st.text_input('ここ(▼▼)に変換する日本語を入れてください', '')
+src=st.text_input('ここ(▼▼)に変換する日本語を入れてください', value='')
 if src != '':
     des = translator.translate(src, dest='en')
     '英語では　：',des.text
