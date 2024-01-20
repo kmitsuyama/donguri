@@ -214,6 +214,9 @@ def transKana(doc, db):
         kanadoc = kanadoc + ' / ' + getKanadoc(word, db)
     return kanadoc[3:]
 
+def clear_text()
+    st.session_state['input_text'] = ''
+
 translator = Translator()
 
 if not firebase_admin._apps:
@@ -225,12 +228,11 @@ if 'input_text' not in st.session_state:
     st.session_state['input_text'] = ''
     
 st.title("どんぐり変換")
-src=st.text_input('ここ(▼▼)に変換する日本語を入れてください', value=st.session_state['input_text'])
-submit_clear=st.button('クリア')
+src=st.text_input('ここ(▼▼)に変換する日本語を入れてください', key='input_text')
+st.button('クリア', on_click=clear_text)
 if src != '':
     des = translator.translate(src, dest='en')
     '英語では　：',des.text
     'かな読みは：',transKana(des.text, db)
-if submit_clear :
-    st.session_state['input_text'] = ''
+
 #EOF
