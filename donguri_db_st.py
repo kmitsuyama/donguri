@@ -229,7 +229,7 @@ if 'input_text' not in st.session_state:
     
 st.title("どんぐり変換")
 src=st.text_input('ここ(▼▼)に変換する日本語を入れてください', key='input_text')
-st.button('クリア', on_click=clear_text)
+st.button('消去', on_click=clear_text)
 if src != '':
     des = translator.translate(src, dest='en')
     '英語では　：',des.text
