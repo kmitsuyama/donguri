@@ -214,7 +214,7 @@ def transKana(doc, db):
         kanadoc = kanadoc + ' / ' + getKanadoc(word, db)
     return kanadoc[3:]
 
-def clear_text()
+def clear_text():
     st.session_state['input_text'] = ''
 
 translator = Translator()
