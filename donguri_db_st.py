@@ -208,7 +208,7 @@ def getKanadoc(keyword, db):
     return retword
 
 def transKana(doc, db):
-    words = re.split('[.,?？ \n]', doc)
+    words = re.split('[.,!！?？ \n]', doc)
     kanadoc = ''
     for word in words:
         kanadoc = kanadoc + ' / ' + getKanadoc(word, db)
