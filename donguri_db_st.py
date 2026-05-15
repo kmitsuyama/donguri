@@ -215,8 +215,14 @@ def transKana(doc, db):
         kanadoc = kanadoc + ' / ' + getKanadoc(word, db)
     return kanadoc[3:]
 
+def submit_text():
+    st.session_state['submitted_text'] = st.session_state.get('input_text', '')
+    st.session_state['input_text'] = ''
+
 def clear_text():
     st.session_state['input_text'] = ''
+    st.session_state['submitted_text'] = ''
+    st.session_state['latest_conversion'] = None
     st.session_state['last_converted_src'] = ''
 
 def clear_history():
@@ -236,15 +242,23 @@ if 'conversion_history' not in st.session_state:
     st.session_state['conversion_history'] = []
 if 'last_converted_src' not in st.session_state:
     st.session_state['last_converted_src'] = ''
+if 'submitted_text' not in st.session_state:
+    st.session_state['submitted_text'] = ''
+if 'latest_conversion' not in st.session_state:
+    st.session_state['latest_conversion'] = None
     
 st.title("どんぐり変換")
-src=st.text_input('ここ(▼▼)に変換する日本語を入れてください', key='input_text')
+st.text_input('ここ(▼▼)に変換する日本語を入れてください', key='input_text', on_change=submit_text)
 st.button('消去', on_click=clear_text)
+src = st.session_state['submitted_text']
 if src != '':
     des = translator.translate(src, dest='en')
     kana_text = transKana(des.text, db)
-    '英語では　：',des.text
-    'かな読みは：',kana_text
+    st.session_state['latest_conversion'] = {
+        '入力': src,
+        '英語': des.text,
+        'かな読み': kana_text,
+    }
 
     if src != st.session_state['last_converted_src']:
         st.session_state['conversion_history'].insert(0, {
@@ -254,6 +268,12 @@ if src != '':
             'かな読み': kana_text,
         })
         st.session_state['last_converted_src'] = src
+
+    st.session_state['submitted_text'] = ''
+
+if st.session_state['latest_conversion']:
+    '英語では　：', st.session_state['latest_conversion']['英語']
+    'かな読みは：', st.session_state['latest_conversion']['かな読み']
 
 st.subheader('変換履歴')
 st.caption('この履歴は現在接続しているセッション内だけ保持されます。')
