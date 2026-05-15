@@ -5,6 +5,7 @@ import sys
 import os
 import re
 import sqlite3
+from datetime import datetime
 from googletrans import Translator
 import firebase_admin
 from firebase_admin import credentials
@@ -216,6 +217,11 @@ def transKana(doc, db):
 
 def clear_text():
     st.session_state['input_text'] = ''
+    st.session_state['last_converted_src'] = ''
+
+def clear_history():
+    st.session_state['conversion_history'] = []
+    st.session_state['last_converted_src'] = ''
 
 translator = Translator()
 
@@ -226,13 +232,35 @@ db = firestore.client()
 
 if 'input_text' not in st.session_state:
     st.session_state['input_text'] = ''
+if 'conversion_history' not in st.session_state:
+    st.session_state['conversion_history'] = []
+if 'last_converted_src' not in st.session_state:
+    st.session_state['last_converted_src'] = ''
     
 st.title("どんぐり変換")
 src=st.text_input('ここ(▼▼)に変換する日本語を入れてください', key='input_text')
 st.button('消去', on_click=clear_text)
 if src != '':
     des = translator.translate(src, dest='en')
+    kana_text = transKana(des.text, db)
     '英語では　：',des.text
-    'かな読みは：',transKana(des.text, db)
+    'かな読みは：',kana_text
+
+    if src != st.session_state['last_converted_src']:
+        st.session_state['conversion_history'].insert(0, {
+            '時刻': datetime.now().strftime('%H:%M:%S'),
+            '入力': src,
+            '英語': des.text,
+            'かな読み': kana_text,
+        })
+        st.session_state['last_converted_src'] = src
+
+st.subheader('変換履歴')
+st.caption('この履歴は現在接続しているセッション内だけ保持されます。')
+st.button('履歴を消去', on_click=clear_history)
+if st.session_state['conversion_history']:
+    st.dataframe(st.session_state['conversion_history'], use_container_width=True)
+else:
+    st.info('まだ変換履歴はありません。')
 
 #EOF
