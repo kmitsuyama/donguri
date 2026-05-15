@@ -6,6 +6,7 @@ import os
 import re
 import sqlite3
 from datetime import datetime
+from html import escape
 from googletrans import Translator
 import firebase_admin
 from firebase_admin import credentials
@@ -215,6 +216,51 @@ def transKana(doc, db):
         kanadoc = kanadoc + ' / ' + getKanadoc(word, db)
     return kanadoc[3:]
 
+def render_wrapped_history_table(history):
+    """変換履歴を折り返し可能なHTMLテーブルで表示する。"""
+    columns = ['時刻', '入力', '英語', 'かな読み']
+    header_cells = ''.join(f'<th>{escape(column)}</th>' for column in columns)
+    body_rows = []
+    for row in history:
+        cells = ''.join(
+            f'<td>{escape(str(row.get(column, "")))}</td>'
+            for column in columns
+        )
+        body_rows.append(f'<tr>{cells}</tr>')
+
+    table_html = f'''
+<style>
+.conversion-history-table {{
+    width: 100%;
+    border-collapse: collapse;
+    table-layout: fixed;
+}}
+.conversion-history-table th,
+.conversion-history-table td {{
+    border: 1px solid rgba(49, 51, 63, 0.2);
+    padding: 0.5rem;
+    text-align: left;
+    vertical-align: top;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+}}
+.conversion-history-table th {{
+    background-color: rgba(49, 51, 63, 0.06);
+    font-weight: 600;
+}}
+.conversion-history-table th:nth-child(1),
+.conversion-history-table td:nth-child(1) {{
+    width: 5.5rem;
+}}
+</style>
+<table class="conversion-history-table">
+    <thead><tr>{header_cells}</tr></thead>
+    <tbody>{''.join(body_rows)}</tbody>
+</table>
+'''
+    st.markdown(table_html, unsafe_allow_html=True)
+
 def submit_text():
     st.session_state['submitted_text'] = st.session_state.get('input_text', '')
     st.session_state['input_text'] = ''
@@ -278,7 +324,7 @@ if st.session_state['latest_conversion']:
 st.subheader('変換履歴')
 st.caption('この履歴は現在接続しているセッション内だけ保持されます。')
 if st.session_state['conversion_history']:
-    st.dataframe(st.session_state['conversion_history'], use_container_width=True)
+    render_wrapped_history_table(st.session_state['conversion_history'])
 else:
     st.info('まだ変換履歴はありません。')
 st.button('履歴を消去', on_click=clear_history)
