@@ -277,10 +277,10 @@ if st.session_state['latest_conversion']:
 
 st.subheader('変換履歴')
 st.caption('この履歴は現在接続しているセッション内だけ保持されます。')
-st.button('履歴を消去', on_click=clear_history)
 if st.session_state['conversion_history']:
     st.dataframe(st.session_state['conversion_history'], use_container_width=True)
 else:
     st.info('まだ変換履歴はありません。')
+st.button('履歴を消去', on_click=clear_history)
 
 #EOF
