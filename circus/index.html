@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
 <meta name="theme-color" content="#17162d">
-<title>CIRCUS! — バルーン・ショー v1.1</title>
+<title>CIRCUS! — バルーン・ショー v1.2</title>
 <style>
 :root { color-scheme:dark; --bg:#17162d; --cream:#fff2d8; --gold:#ffd87b; --pink:#f25c6f; --stroke:#413a57; }
 * { box-sizing:border-box; }
@@ -53,7 +53,7 @@ canvas { width:100%; height:auto; display:block; border-radius:8px; background:#
     <div id="pad" class="pad" role="slider" aria-label="シーソーの位置" aria-valuemin="0" aria-valuemax="100" aria-valuenow="50" tabindex="0"><div id="knob" class="knob"></div><span class="pad-label">⇦ 横にスライド ⇨</span></div>
     <button id="sound" class="action secondary" type="button" aria-label="効果音のオン・オフ">♪ ON</button>
   </div>
-  <p class="foot"><b>操作：</b>画面を左右にドラッグ、または下のバーをスライド。<br>落ちてくるピエロを<b>シーソーの高い側</b>で受け止めよう！</p>
+  <p class="foot"><b>操作：</b>画面を左右にドラッグ、または下のバーをスライド。<br>落ちてくるピエロを<b>シーソーの高い側</b>で受け止めよう！<br>端の風船は、飛ばす側のシーソーを端に寄せると狙いやすくなります。</p>
 </main>
 <script>
 (() => {
@@ -63,6 +63,8 @@ const ctx = canvas.getContext('2d');
 const $ = id => document.getElementById(id);
 const W=420,H=600, GROUND=550, BOARDY=505, HALF=58;
 const LO=73,HI=347, CATCH_RADIUS=47, FLIGHT_SPEED=.68;
+// Edge balloons are slightly inset with a gentler sway, for fairer corner shots.
+const EDGE_INSET=9, EDGE_SWAY=9, EDGE_HIT_RADIUS=28;
 const balloonSpecs = [
  {y:108,color:'#74bcec',light:'#c3ecff',shade:'#3172ae',points:100,bonus:1000,speed:.68},
  {y:151,color:'#82db8b',light:'#e2ffd2',shade:'#328f66',points:50,bonus:500,speed:.53},
@@ -144,7 +146,8 @@ document.addEventListener('visibilitychange',()=>{if(document.hidden&&mode==='ru
 function boardEnd(side){return {x:boardX+side*HALF,y:BOARDY+side*waitingSide*14};}
 function balloonPosition(b){
  const row=b.row,s=balloonSpecs[row];
- return {x:47+b.i*40+Math.sin(seconds*s.speed+(row*2.1))*17,
+ return {x:47+b.i*40+(b.i===0?EDGE_INSET:b.i===8?-EDGE_INSET:0)
+  +Math.sin(seconds*s.speed+(row*2.1))*(b.i===0||b.i===8?EDGE_SWAY:17),
  y:s.y+Math.sin(seconds*1.5+b.phase)*2.2};
 }
 function burst(x,y,color,n=11,force=3.5){
@@ -166,17 +169,50 @@ function popBall(b){
   sound('bonus');
  }
 }
+// Number of 60fps frames until the clown first reaches a balloon's height.
+// This mirrors the actual bounce physics, including the ceiling limit.
+function ascentFrames(y0,vy0,goalY){
+ let y=y0,vy=vy0;
+ for(let f=1;f<120;f++){
+  vy+=.266*FLIGHT_SPEED;y+=vy*FLIGHT_SPEED;
+  if(y<=goalY)return f;
+  if(y<65){y=65;vy=Math.abs(vy)*.63;}
+ }
+ return 50;
+}
+function aimForEdge(launch,upward,side,normalVX){
+ // Only assist when the player has actually brought the launching end
+ // close to the appropriate edge of the playfield.
+ const origin=clamp(launch.x,32,W-32);
+ if(side===-1 ? origin>135 : origin<285)return normalVX;
+ const col=side===-1?0:8;
+ const options=balls.filter(b=>b.alive&&b.i===col).sort((a,b)=>a.row-b.row);
+ for(const b of options){
+  const f=ascentFrames(launch.y-21,upward,balloonSpecs[b.row].y);
+  const s=balloonSpecs[b.row];
+  const balloonX=47+40*col+(col===0?EDGE_INSET:-EDGE_INSET)
+    +Math.sin((seconds+f/60)*s.speed+b.row*2.1)*EDGE_SWAY;
+  const vx=(balloonX-origin)/(f*FLIGHT_SPEED);
+  if(Math.abs(vx)>2.05)continue; // A distant balloon must still be earned.
+  // Avoid outward wall bounces that would make a predicted aim unreliable.
+  const reach=origin+vx*f*FLIGHT_SPEED;
+  if(reach<34||reach>W-34)continue;
+  return vx;
+ }
+ return normalVX;
+}
 function bounce(offset){
  const launchingSide=waitingSide;
  const launch=boardEnd(launchingSide);
  const nextId=1-flying.id;
- // Aim the next landing inside the receiving end's physically reachable range.
- // The old sideways kick could send a clown beyond the seesaw even at its limit.
+ // Standard arc is stable and reachable; edge-positioned shots get steering
+ // toward the surviving outermost balloons instead of always curving inward.
  const landingMin=launchingSide===1?105:38;
  const landingMax=launchingSide===1?382:315;
  const desiredX=clamp(launch.x-launchingSide*72+offset*.35+(Math.random()-.5)*25,landingMin,landingMax);
- const vx=clamp((desiredX-launch.x)/114,-1.45,1.45);
+ const normalVX=clamp((desiredX-launch.x)/114,-1.45,1.45);
  const upward=-(15.25+clamp(1-Math.abs(offset)/36,0,1)*.75);
+ const vx=aimForEdge(launch,upward,launchingSide,normalVX);
  flying={x:launch.x,y:launch.y-21,vx,vy:upward,id:nextId,angle:0};
  waitingSide=-waitingSide;catchCount++;
  burst(launch.x,launch.y-10,'#ffedb1',8,2);invulnerable=13;
@@ -218,7 +254,7 @@ function update(d){
  for(const b of balls){
  if(!b.alive)continue;
  const pos=balloonPosition(b);
- if(Math.abs(p.x-pos.x)<21&&Math.abs(p.y-pos.y)<23){popBall(b);}
+ if(Math.abs(p.x-pos.x)<(b.i===0||b.i===8?EDGE_HIT_RADIUS:21)&&Math.abs(p.y-pos.y)<23){popBall(b);}
  }
  // The airborne clown must arrive at the raised, empty end of the seesaw.
  const empty=boardEnd(-waitingSide);
