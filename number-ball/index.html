@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
 <meta name="theme-color" content="#0b142a">
-<title>NUMBER BALL v1.1 — 1から9のナンバーハント</title>
+<title>NUMBER BALL v1.2 — 1から9のナンバーハント</title>
 <style>
 :root{color-scheme:dark;--bg:#0b142a;--panel:#14233c;--line:#385575;--text:#f1f7ff;--muted:#a4bbce;--gold:#ffe08d;--cyan:#8ff2e7;--red:#ff7d90}
 *{box-sizing:border-box}
@@ -50,7 +50,7 @@ canvas{display:block;width:100%;height:auto;aspect-ratio:420/560;border-radius:9
  <div class="stage-shell"><canvas id="game" width="420" height="560" aria-label="数の小さい順に1から9の玉を集めるゲーム"></canvas></div>
  <div class="status"><div class="status-message" id="status">数字の<b>1</b>から順に集めよう！</div><button class="small-btn" id="start" type="button">▶ スタート</button><button class="small-btn" id="sound" type="button" aria-label="効果音の切り替え">♪ ON</button></div>
  <button id="turn" class="turn-button" type="button" aria-label="押している間、右に曲がる" aria-pressed="false"><span class="turn-symbol">↻</span><span><strong>右に曲がる</strong><small>押している間だけ なめらかに右旋回</small></span></button>
- <p class="instructions">玉は<b>自動で前進</b>。ボタンを離すと直進します。<br><b>光る数字</b>を1から順番に集めよう！間違えると180°反転。<b>3回で終了</b>。<br>PCでは<b>スペースキー・右矢印キー</b>長押しでも操作できます。</p>
+ <p class="instructions">玉は<b>自動で前進</b>。ボタンを離すと直進します。<br><b>光る数字</b>を1から順番に集めよう！間違えると180°反転。<b>3回で終了</b>。</p>
 </main>
 <script>
 (()=>{'use strict';
