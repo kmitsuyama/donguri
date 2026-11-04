@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
 <meta name="theme-color" content="#0b142a">
-<title>NUMBER BALL — 1から9のナンバーハント</title>
+<title>NUMBER BALL v1.1 — 1から9のナンバーハント</title>
 <style>
 :root{color-scheme:dark;--bg:#0b142a;--panel:#14233c;--line:#385575;--text:#f1f7ff;--muted:#a4bbce;--gold:#ffe08d;--cyan:#8ff2e7;--red:#ff7d90}
 *{box-sizing:border-box}
@@ -21,7 +21,7 @@ h1{font-size:clamp(25px,7vw,35px);line-height:1;margin:0;font-weight:1000;letter
 .stat span{display:block;font-size:10px;color:#b4c7db;font-weight:850;letter-spacing:.09em}
 .stat strong{display:block;font-size:clamp(17px,4.8vw,23px);font-weight:1000;color:#fce9b8;font-variant-numeric:tabular-nums;line-height:1.4}
 .stat strong.next{color:var(--cyan)}.stat strong.danger{color:var(--red)}
-.stage-shell{position:relative;margin:auto;width:min(100%,calc((100dvh - 285px) * .75));min-width:min(100%,206px);padding:5px;background:#192b48;border:2px solid #7097bd;border-radius:15px;box-shadow:0 0 0 2px #172742,0 14px 34px #0009}
+.stage-shell{position:relative;margin:auto;width:min(100%,calc((100dvh - 250px) * .75));min-width:min(100%,206px);padding:5px;background:#192b48;border:2px solid #7097bd;border-radius:15px;box-shadow:0 0 0 2px #172742,0 14px 34px #0009}
 canvas{display:block;width:100%;height:auto;aspect-ratio:420/560;border-radius:9px;background:#07162d;touch-action:manipulation}
 .status{display:flex;justify-content:space-between;align-items:center;gap:8px;min-height:40px;margin:10px 1px 8px}
 .status-message{color:#d7e8fa;font-size:12px;font-weight:750;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -34,12 +34,8 @@ canvas{display:block;width:100%;height:auto;aspect-ratio:420/560;border-radius:9
 .turn-button.active{transform:translateY(4px);box-shadow:0 1px 0 #875a42,0 5px 15px #0006;background:linear-gradient(#a9f7e9,#65c8bd);border-color:#c6fff3}
 .instructions{text-align:center;margin:12px 2px 0;color:#bdcddd;font-size:11px;line-height:1.7}
 .instructions b{color:#fff0b7}
-.progress{display:flex;gap:5px;justify-content:center;margin-top:11px}
-.dot-step{width:27px;height:27px;display:flex;align-items:center;justify-content:center;border:1px solid #4a6685;border-radius:50%;font-weight:900;font-size:12px;background:#17263c;color:#8ca7c1}
-.dot-step.current{color:#132b38;background:var(--cyan);border-color:#c4fff5;box-shadow:0 0 14px #62dfce77}
-.dot-step.done{background:#436b58;border-color:#7dcf9d;color:#b6f7c6}
-@media(max-height:720px){.app{padding-top:6px}.heading{margin-bottom:5px}.hud{margin-bottom:5px}.stage-shell{width:min(100%,calc((100dvh - 265px) * .75))}.status{margin:7px 1px 5px;min-height:35px}.turn-button{min-height:64px}.instructions{font-size:10px;margin-top:7px}.progress{margin-top:7px}}
-@media(max-height:640px){.instructions{display:none}.turn-button{min-height:60px}.stage-shell{width:min(100%,calc((100dvh - 255px) * .75))}.progress{margin-top:7px}}
+@media(max-height:720px){.app{padding-top:6px}.heading{margin-bottom:5px}.hud{margin-bottom:5px}.stage-shell{width:min(100%,calc((100dvh - 230px) * .75))}.status{margin:7px 1px 5px;min-height:35px}.turn-button{min-height:64px}.instructions{font-size:10px;margin-top:7px}}
+@media(max-height:640px){.instructions{display:none}.turn-button{min-height:60px}.stage-shell{width:min(100%,calc((100dvh - 220px) * .75))}}
 @media(min-width:700px){.app{padding-top:22px}.stage-shell{width:min(100%,380px)}}
 </style>
 </head>
@@ -54,13 +50,12 @@ canvas{display:block;width:100%;height:auto;aspect-ratio:420/560;border-radius:9
  <div class="stage-shell"><canvas id="game" width="420" height="560" aria-label="数の小さい順に1から9の玉を集めるゲーム"></canvas></div>
  <div class="status"><div class="status-message" id="status">数字の<b>1</b>から順に集めよう！</div><button class="small-btn" id="start" type="button">▶ スタート</button><button class="small-btn" id="sound" type="button" aria-label="効果音の切り替え">♪ ON</button></div>
  <button id="turn" class="turn-button" type="button" aria-label="押している間、右に曲がる" aria-pressed="false"><span class="turn-symbol">↻</span><span><strong>右に曲がる</strong><small>押している間だけ なめらかに右旋回</small></span></button>
- <div class="progress" aria-label="回収順序" id="progress"></div>
  <p class="instructions">玉は<b>自動で前進</b>。ボタンを離すと直進します。<br><b>光る数字</b>を1から順番に集めよう！間違えると180°反転。<b>3回で終了</b>。<br>PCでは<b>スペースキー・右矢印キー</b>長押しでも操作できます。</p>
 </main>
 <script>
 (()=>{'use strict';
 const canvas=document.getElementById('game'),ctx=canvas.getContext('2d'),el=id=>document.getElementById(id);
-const W=420,H=560,R=19,SPEED=146,TURN=3.18,PI=Math.PI,TAU=PI*2;
+const W=420,H=560,R=19,PLAYER_R=15,SPEED=146,TURN=3.18,PI=Math.PI,TAU=PI*2;
 const clamp=(x,a,b)=>Math.max(a,Math.min(b,x));
 const rand=(a,b)=>a+Math.random()*(b-a);
 const distance=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y);
@@ -74,7 +69,6 @@ function updateHUD(){
  el('start').textContent=state==='running'?'Ⅱ 一時停止':state==='paused'?'▶ 再開':state==='intro'?'▶ スタート':'↻ もう一度';
  const msg=state==='intro'?'数字の<b>1</b>から順に集めよう！':state==='running'?`次は <b>${target}</b> の玉を取ろう！`:state==='paused'?'一時停止中':state==='over'?'3回間違えました':'1から9まで全部クリア！';
  el('status').innerHTML=msg;
- let html='';for(let n=1;n<=9;n++){const cls=n<target?'done':n===target?'current':'';html+=`<div class="dot-step ${cls}">${n<target?'✓':n}</div>`}el('progress').innerHTML=html;
 }
 function placeBalls(){
  const b=[];
@@ -149,8 +143,8 @@ function wrong(b){
  // Move outside the collision so the same number cannot trigger another miss.
  let dx=player.x-b.x,dy=player.y-b.y,d=Math.hypot(dx,dy);
  if(d<.001){dx=-Math.cos(player.a);dy=-Math.sin(player.a);d=1}
- const sep=R*2+3;
- player.x=clamp(b.x+dx/d*sep,R,W-R);player.y=clamp(b.y+dy/d*sep,R,H-R);
+ const sep=R+PLAYER_R+3;
+ player.x=clamp(b.x+dx/d*sep,PLAYER_R,W-PLAYER_R);player.y=clamp(b.y+dy/d*sep,PLAYER_R,H-PLAYER_R);
  sparks(b.x,b.y,'#fa7b88',13);floatText(b.x,b.y-28,'180° TURN','#ffacb6');sfx('wrong');blink=.3;
  if(misses>=3){state='over';setTurn(false);sfx('over')}
  updateHUD();
@@ -165,14 +159,14 @@ function step(dt){
   let vx=Math.cos(player.a),vy=Math.sin(player.a);
   player.x+=vx*SPEED*h;player.y+=vy*SPEED*h;
   let hitX=false,hitY=false;
-  if(player.x<R){player.x=R+(R-player.x);hitX=true}
-  if(player.x>W-R){player.x=W-R-(player.x-(W-R));hitX=true}
-  if(player.y<R){player.y=R+(R-player.y);hitY=true}
-  if(player.y>H-R){player.y=H-R-(player.y-(H-R));hitY=true}
+  if(player.x<PLAYER_R){player.x=PLAYER_R+(PLAYER_R-player.x);hitX=true}
+  if(player.x>W-PLAYER_R){player.x=W-PLAYER_R-(player.x-(W-PLAYER_R));hitX=true}
+  if(player.y<PLAYER_R){player.y=PLAYER_R+(PLAYER_R-player.y);hitY=true}
+  if(player.y>H-PLAYER_R){player.y=H-PLAYER_R-(player.y-(H-PLAYER_R));hitY=true}
   if(hitX||hitY){if(hitX)vx=-vx;if(hitY)vy=-vy;player.a=(Math.atan2(vy,vx)+TAU)%TAU;sfx('wall')}
   for(const b of balls){
    if(!b.alive)continue;
-   if(distance(player,b)>R*2-1)continue;
+   if(distance(player,b)>R+PLAYER_R-1)continue;
    if(b.n===target){collect(b)}else{wrong(b)}
    break;
   }
@@ -201,7 +195,7 @@ function drawBall(b){
  ctx.font='1000 22px system-ui,sans-serif';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillStyle=active?'#123d45':'#e6efff';ctx.fillText(String(b.n),0,1);ctx.restore();
 }
 function drawPlayer(){if(!player)return;
- ctx.save();ctx.translate(player.x,player.y);
+ ctx.save();ctx.translate(player.x,player.y);ctx.scale(PLAYER_R/R,PLAYER_R/R);
  ctx.shadowColor='#ffb978';ctx.shadowBlur=14;
  const g=ctx.createRadialGradient(-6,-7,2,0,0,R);g.addColorStop(0,'#ffffff');g.addColorStop(.4,'#f9e8c6');g.addColorStop(1,'#df946d');ctx.fillStyle=g;ctx.beginPath();ctx.arc(0,0,R,0,TAU);ctx.fill();ctx.shadowBlur=0;
  ctx.lineWidth=2;ctx.strokeStyle='#ffebc9';ctx.stroke();
@@ -246,7 +240,7 @@ function frame(now){const dt=lastT?clamp((now-lastT)/1000,0,.035):0;lastT=now;if
 // Lightweight deterministic hooks only available when ?test=1 is supplied.
 if(new URLSearchParams(location.search).has('test'))window.__numberBallTest={
  state:()=>({state,target,misses,elapsed,player:player&&{...player},balls:balls.map(b=>({...b})),turning}),
- start:begin, step, setTurning:setTurn, setPlayer:(p)=>{player={...player,...p}},setBalls:(b)=>{balls=b.map(x=>({...x}))},setTarget:(n)=>{target=n;updateHUD()},setMisses:(n)=>{misses=n;updateHUD()},getR:()=>R
+ start:begin, step, setTurning:setTurn, setPlayer:(p)=>{player={...player,...p}},setBalls:(b)=>{balls=b.map(x=>({...x}))},setTarget:(n)=>{target=n;updateHUD()},setMisses:(n)=>{misses=n;updateHUD()},getR:()=>R, getPlayerR:()=>PLAYER_R
 };
 randomize();updateHUD();requestAnimationFrame(frame);
 })();
