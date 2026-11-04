@@ -1,0 +1,275 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<meta name="theme-color" content="#0a0c10">
+<title>PONG! — レトロ・ピンポン</title>
+<style>
+:root{color-scheme:dark;--bg:#090b0e;--paper:#f5f5e9;--soft:#bdc5c9;--border:#4f595e;--gold:#efdc9b}
+*{box-sizing:border-box}
+html{background:var(--bg);overscroll-behavior:none}
+body{margin:0;min-height:100svh;font-family:system-ui,-apple-system,"Hiragino Kaku Gothic ProN","Noto Sans JP",sans-serif;color:var(--paper);background:radial-gradient(ellipse at 50% -30%,#2e373b 0%,#15191c 45%,#090b0e 88%)}
+button,select{font:inherit;-webkit-tap-highlight-color:transparent}
+.app{width:min(100%,650px);margin:auto;padding:12px 12px calc(14px + env(safe-area-inset-bottom))}
+header{display:flex;align-items:center;justify-content:space-between;gap:9px;margin-bottom:11px}
+.brand{display:flex;gap:11px;align-items:baseline}
+h1{font:1000 clamp(34px,9vw,55px)/1 Impact,"Arial Black",system-ui,sans-serif;letter-spacing:.11em;margin:0;color:#f7f8ed;text-shadow:3px 3px 0 #7c878d,0 0 17px #ced9d64a}
+.brand small{font-size:11px;font-weight:850;color:#c8d2d2;letter-spacing:.08em}
+.tag{border:1px solid #7f8c8c;color:#d5dedc;border-radius:40px;font-size:10px;padding:5px 9px;font-weight:800;white-space:nowrap}
+.modes{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:10px;flex-wrap:wrap}
+.switch{display:flex;background:#11171a;border:1px solid #4c5c62;border-radius:11px;padding:3px;gap:2px}
+.switch button{border:0;border-radius:8px;background:transparent;color:#b4c1c4;font-size:12px;font-weight:900;padding:8px 12px;min-height:35px;cursor:pointer}
+.switch button[aria-pressed="true"]{background:#e6e9dc;color:#192027}
+.difficulty{display:flex;align-items:center;gap:7px;color:#ccd4d3;font-size:11px;font-weight:850}
+select{border:1px solid #667478;border-radius:8px;background:#1d272b;color:#f4f5e9;padding:7px 10px;min-height:35px;font-weight:900;font-size:12px}
+select:disabled{opacity:.45}
+.cabinet{padding:7px;border-radius:14px;border:2px solid #a0a9a4;background:linear-gradient(135deg,#374148,#12191c 42%,#293136);box-shadow:0 0 0 2px #1c2123,0 20px 54px #0009}
+.screen{position:relative;overflow:hidden;border:3px solid #303b3a;border-radius:6px;background:#070a0a;box-shadow:inset 0 0 36px #000}
+canvas{display:block;width:100%;height:auto;aspect-ratio:720 / 560;touch-action:none;user-select:none;-webkit-user-select:none;background:#050808;cursor:ns-resize}
+.screen::after{content:"";position:absolute;inset:0;pointer-events:none;background:repeating-linear-gradient(to bottom,transparent 0px,transparent 3px,#c4f5ce08 4px);opacity:.36;mix-blend-mode:screen}
+.hud{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:8px;margin:11px 0 10px}
+.player-stat{display:flex;gap:8px;align-items:baseline;font-weight:850;font-size:12px;color:#e9ede3}
+.player-stat:last-child{justify-content:flex-end}
+.player-stat .number{font:900 25px/1 ui-monospace,monospace;color:var(--gold)}
+.center-status{font-size:11px;text-align:center;font-weight:850;color:#c3d1d0;min-width:110px}
+.toolbar{display:flex;align-items:center;gap:8px}
+.primary,.secondary{border-radius:10px;border:1px solid #dde6db;cursor:pointer;min-height:45px;padding:10px 17px;font-size:14px;font-weight:900}
+.primary{background:linear-gradient(#f2f3e8,#d2d6ca);color:#141b1d;flex:1;box-shadow:0 3px 0 #71807a}
+.secondary{background:#263136;color:#e7e9dd;border-color:#657477;box-shadow:0 3px 0 #111b1d}
+.primary:active,.secondary:active{transform:translateY(2px);box-shadow:none}
+.instructions{text-align:center;color:#cbd5d1;font-size:12px;line-height:1.7;margin:12px 2px 0;min-height:40px}
+.instructions strong{color:#ffe7a2}
+.footer{text-align:center;color:#8b9a9b;font-size:10px;margin-top:6px}
+@media(max-width:420px){.brand small{font-size:10px}.tag{font-size:9px;padding:4px 7px}.switch button{padding:8px 10px}.difficulty{gap:4px}.app{padding-top:9px}.player-stat{font-size:11px}.center-status{font-size:10px;min-width:80px}}
+@media(max-height:730px){.app{padding-top:6px}.modes{margin-bottom:6px}.hud{margin:7px 0}.instructions{margin:8px 2px 0}.cabinet{padding:5px}.toolbar button{min-height:40px}}
+@media(min-width:780px){.app{padding-top:25px}}
+</style>
+</head>
+<body>
+<main class="app">
+<header><div class="brand"><h1>PONG!</h1><small>レトロ・ピンポン</small></div><span class="tag">1972 ARCADE STYLE</span></header>
+<section class="modes" aria-label="対戦設定">
+  <div class="switch" role="group" aria-label="対戦人数">
+    <button type="button" id="one" aria-pressed="true">1人 vs CPU</button>
+    <button type="button" id="two" aria-pressed="false">2人対戦</button>
+  </div>
+  <label class="difficulty" for="difficulty">CPUの強さ
+    <select id="difficulty" aria-label="CPUの強さ"><option value="easy">やさしい</option><option value="normal" selected>ふつう</option><option value="hard">つよい</option></select>
+  </label>
+</section>
+<div class="cabinet"><div class="screen"><canvas id="game" width="720" height="560" aria-label="左右のパドルでボールを打ち合うPONGゲーム。指で上下に動かせます"></canvas></div></div>
+<section class="hud" aria-label="スコアと対戦状況">
+  <div class="player-stat">P1 <span class="number" id="score1">00</span></div>
+  <div class="center-status" id="status" aria-live="polite">11点先取で勝利！</div>
+  <div class="player-stat"><span id="rightName">CPU</span> <span class="number" id="score2">00</span></div>
+</section>
+<div class="toolbar">
+  <button type="button" class="primary" id="start">▶ スタート</button>
+  <button type="button" class="secondary" id="sound" aria-label="効果音を切り替え">♪ ON</button>
+</div>
+<p class="instructions" id="instructions"><strong>操作：</strong>画面を指で上下にドラッグして左パドルを動かそう。<br>ボールを打ち返し、相手より先に11点を取れば勝ち！</p>
+<p class="footer">スマホ・PC対応 / 1人対戦または同じ画面で2人対戦</p>
+</main>
+<script>
+(()=>{'use strict';
+const canvas=document.getElementById('game'),ctx=canvas.getContext('2d');
+const el=id=>document.getElementById(id);
+const W=720,H=560,TOP=29,BOTTOM=H-29,PADW=13,PADH=96,BALL=13;
+const LEFT=32,RIGHT=W-32-PADW,WIN_SCORE=11,STEP=1/120;
+const clamp=(n,a,b)=>Math.max(a,Math.min(b,n));
+const rand=(a,b)=>a+Math.random()*(b-a);
+let mode='intro',twoPlayer=false,difficulty='normal',score1=0,score2=0,rally=0,server=1,serveDir=1;
+let left={y:H/2,target:H/2},right={y:H/2,target:H/2},ball={x:W/2,y:H/2,vx:0,vy:0};
+let wait=0,countdown=0,lastT=0,acc=0,aiTimer=0,aiNoise=0,aiAim=H/2,notice='',noticeTime=0;
+let soundEnabled=true,audio=null,keyState=new Set(),pointers=new Map(),particle=[];
+let stamp=0,winningSide=0;
+try{difficulty=localStorage.getItem('pong_mobile_cpu')||'normal';if(!['easy','normal','hard'].includes(difficulty))difficulty='normal'}catch(_){}
+el('difficulty').value=difficulty;
+function beep(freq=380,duration=.07,shape='square',level=.035){
+ if(!soundEnabled)return;
+ try{const AC=window.AudioContext||window.webkitAudioContext;if(!AC)return;if(!audio)audio=new AC();
+ if(audio.state==='suspended')audio.resume().catch(()=>{});
+ const t=audio.currentTime,o=audio.createOscillator(),g=audio.createGain();o.type=shape;o.frequency.setValueAtTime(freq,t);g.gain.setValueAtTime(.0001,t);g.gain.exponentialRampToValueAtTime(level,t+.008);g.gain.exponentialRampToValueAtTime(.0001,t+duration);o.connect(g);g.connect(audio.destination);o.start(t);o.stop(t+duration+.015)}catch(_){}
+}
+function persistDifficulty(){try{localStorage.setItem('pong_mobile_cpu',difficulty)}catch(_){}}
+function updateUI(){
+ el('score1').textContent=String(score1).padStart(2,'0');el('score2').textContent=String(score2).padStart(2,'0');
+ el('rightName').textContent=twoPlayer?'P2':'CPU';
+ el('one').setAttribute('aria-pressed',String(!twoPlayer));el('two').setAttribute('aria-pressed',String(twoPlayer));
+ el('difficulty').disabled=twoPlayer;
+ el('start').textContent=mode==='running'?'Ⅱ 一時停止':mode==='paused'?'▶ 再開':mode==='over'?'↻ もう一度':'▶ スタート';
+ if(mode==='intro')el('status').textContent='11点先取で勝利！';
+ else if(mode==='paused')el('status').textContent='一時停止中';
+ else if(mode==='over')el('status').textContent=winningSide===1?'P1の勝利！':(twoPlayer?'P2の勝利！':'CPUの勝利');
+ else if(wait>0)el('status').textContent='次のサーブ';
+ else el('status').textContent='ラリー '+rally;
+ el('instructions').innerHTML=twoPlayer?
+  '<strong>2人対戦：</strong>左半分をP1、右半分をP2が上下ドラッグ。<br>同じスマホでも2本指で同時に操作できます。':
+  '<strong>操作：</strong>画面を指で上下にドラッグして左パドルを動かそう。<br>ボールを打ち返し、相手より先に11点を取れば勝ち！';
+}
+function resetPaddles(){left.y=left.target=H/2;right.y=right.target=H/2}
+function holdServe(direction,delay){
+ serveDir=direction;wait=delay;ball.x=W/2;ball.y=H/2;ball.vx=0;ball.vy=0;rally=0;aiTimer=0;
+}
+function startNew(){
+ mode='running';score1=score2=0;winningSide=0;particle=[];notice='';noticeTime=0;resetPaddles();
+ server=Math.random()<.5?1:2;holdServe(server===1?1:-1,1.5);updateUI();beep(540,.10,'sine');
+}
+function toggle(){
+ if(mode==='intro'||mode==='over')startNew();
+ else if(mode==='running'){mode='paused';keyState.clear()}
+ else if(mode==='paused')mode='running';
+ updateUI();
+}
+el('start').addEventListener('click',toggle);
+el('one').addEventListener('click',()=>{if(!twoPlayer)return;twoPlayer=false;mode='intro';score1=score2=0;winningSide=0;resetPaddles();holdServe(1,0);updateUI()});
+el('two').addEventListener('click',()=>{if(twoPlayer)return;twoPlayer=true;mode='intro';score1=score2=0;winningSide=0;resetPaddles();holdServe(1,0);updateUI()});
+el('difficulty').addEventListener('change',e=>{difficulty=e.target.value;persistDifficulty();aiTimer=0});
+el('sound').addEventListener('click',()=>{soundEnabled=!soundEnabled;el('sound').textContent=soundEnabled?'♪ ON':'♪ OFF';if(soundEnabled)beep(640,.08)});
+function controlPaddle(which,e){
+ const rect=canvas.getBoundingClientRect(),mouseY=clamp((e.clientY-rect.top)*H/rect.height,TOP+PADH/2+3,BOTTOM-PADH/2-3);
+ (which===1?left:right).target=mouseY;
+}
+canvas.addEventListener('pointerdown',e=>{
+ e.preventDefault();if(mode!=='running'){toggle();return}
+ const r=canvas.getBoundingClientRect(),x=(e.clientX-r.left)*W/r.width;
+ const who=twoPlayer&&x>W/2?2:1;
+ pointers.set(e.pointerId,who);canvas.setPointerCapture(e.pointerId);controlPaddle(who,e);
+});
+canvas.addEventListener('pointermove',e=>{const who=pointers.get(e.pointerId);if(who){e.preventDefault();controlPaddle(who,e)}});
+for(const event of ['pointerup','pointercancel','lostpointercapture'])canvas.addEventListener(event,e=>pointers.delete(e.pointerId));
+window.addEventListener('keydown',e=>{
+ if(['ArrowUp','ArrowDown',' ','Enter','w','s','W','S'].includes(e.key))e.preventDefault();
+ if(e.key===' '||e.key==='Enter'){if(!e.repeat)toggle();return}
+ keyState.add(e.key.toLowerCase());
+});
+window.addEventListener('keyup',e=>keyState.delete(e.key.toLowerCase()));
+window.addEventListener('blur',()=>{keyState.clear();pointers.clear();if(mode==='running'){mode='paused';updateUI()}});
+document.addEventListener('visibilitychange',()=>{if(document.hidden&&mode==='running'){mode='paused';keyState.clear();pointers.clear();updateUI()}});
+function reflection(y,dist){
+ const min=TOP+BALL/2,max=BOTTOM-BALL/2,span=max-min;
+ const q=((y+dist-min)%(span*2)+(span*2))%(span*2);
+ return min+(q<=span?q:2*span-q);
+}
+function updateAI(dt){
+ if(twoPlayer)return;
+ const spec={easy:{speed:235,error:92,interval:.52},normal:{speed:360,error:41,interval:.28},hard:{speed:490,error:12,interval:.13}}[difficulty];
+ aiTimer-=dt;
+ if(aiTimer<=0){
+  aiTimer=spec.interval;aiNoise=rand(-spec.error,spec.error);
+  const incoming=ball.vx>40;
+  if(incoming){const t=Math.max(0,(RIGHT-ball.x)/ball.vx);aiAim=reflection(ball.y,ball.vy*t)+aiNoise;}
+  else aiAim=H/2+(ball.y-H/2)*.1+aiNoise*.55;
+  aiAim=clamp(aiAim,TOP+PADH/2,BOTTOM-PADH/2);
+ }
+ right.target=aiAim;
+ right.y+=clamp(right.target-right.y,-spec.speed*dt,spec.speed*dt);
+ right.y=clamp(right.y,TOP+PADH/2,BOTTOM-PADH/2);
+}
+function launch(){
+ const speed=350,angle=rand(-.49,.49);
+ ball.vx=Math.cos(angle)*speed*serveDir;ball.vy=Math.sin(angle)*speed;
+ if(Math.abs(ball.vy)<55)ball.vy=rand(55,85)*(Math.random()<.5?-1:1);
+ beep(300,.08,'square',.035);updateUI();
+}
+function spark(x,y){for(let i=0;i<9;i++)particle.push({x,y,vx:rand(-95,95),vy:rand(-125,125),life:rand(.17,.42)})}
+function point(who){
+ if(who===1)score1++;else score2++;
+ beep(who===1?570:240,.19,'sawtooth',.045);spark(ball.x,ball.y);
+ if(Math.max(score1,score2)>=WIN_SCORE){
+  mode='over';winningSide=who;ball.vx=ball.vy=0;
+ }else{server=who;holdServe(who===1?1:-1,1.35)}
+ updateUI();
+}
+function paddleBounce(who){
+ const p=who===1?left:right;
+ const offset=clamp((ball.y-p.y)/(PADH/2),-1,1);
+ const speed=Math.min(780,Math.hypot(ball.vx,ball.vy)*1.055+12);
+ const angle=offset*1.02;
+ ball.vx=(who===1?1:-1)*Math.max(speed*.52,Math.cos(angle)*speed);
+ ball.vy=Math.sin(angle)*speed;
+ if(Math.abs(ball.vy)<32)ball.vy=(Math.random()<.5?-1:1)*34;
+ ball.x=who===1?LEFT+PADW+BALL/2+.2:RIGHT-BALL/2-.2;
+ rally++;beep(230+Math.abs(offset)*140,.062,'square',.042);spark(ball.x,ball.y);
+}
+function step(dt){
+ noticeTime=Math.max(0,noticeTime-dt);
+ particle.forEach(p=>{p.x+=p.vx*dt;p.y+=p.vy*dt;p.life-=dt});particle=particle.filter(p=>p.life>0).slice(-80);
+ if(mode!=='running')return;
+ const keyStep=545*dt;
+ let k=0;if(keyState.has('w'))k--;if(keyState.has('s'))k++;
+ if(!twoPlayer){if(keyState.has('arrowup'))k--;if(keyState.has('arrowdown'))k++}
+ left.target=clamp(left.target+k*keyStep,TOP+PADH/2,BOTTOM-PADH/2);
+ if(twoPlayer){let j=0;if(keyState.has('arrowup'))j--;if(keyState.has('arrowdown'))j++;
+  right.target=clamp(right.target+j*keyStep,TOP+PADH/2,BOTTOM-PADH/2);}
+ left.y+=clamp(left.target-left.y,-1500*dt,1500*dt);
+ left.y=clamp(left.y,TOP+PADH/2,BOTTOM-PADH/2);
+ if(twoPlayer){right.y+=clamp(right.target-right.y,-1500*dt,1500*dt);right.y=clamp(right.y,TOP+PADH/2,BOTTOM-PADH/2)}
+ else updateAI(dt);
+ if(wait>0){wait-=dt;if(wait<=0){wait=0;launch()}return}
+ const oldX=ball.x;
+ ball.x+=ball.vx*dt;ball.y+=ball.vy*dt;
+ if(ball.y-BALL/2<=TOP&&ball.vy<0){ball.y=2*(TOP+BALL/2)-ball.y;ball.vy=-ball.vy;beep(480,.035,'square',.018)}
+ if(ball.y+BALL/2>=BOTTOM&&ball.vy>0){ball.y=2*(BOTTOM-BALL/2)-ball.y;ball.vy=-ball.vy;beep(480,.035,'square',.018)}
+ const lx=LEFT+PADW+BALL/2,rx=RIGHT-BALL/2;
+ // Crossing checks avoid missing the racket even when the ball speeds up.
+ if(ball.vx<0&&oldX>=lx&&ball.x<=lx){
+  if(Math.abs(ball.y-left.y)<PADH/2+BALL/2)paddleBounce(1);
+ }else if(ball.vx>0&&oldX<=rx&&ball.x>=rx){
+  if(Math.abs(ball.y-right.y)<PADH/2+BALL/2)paddleBounce(2);
+ }
+ if(ball.x+BALL/2<0)point(2);
+ else if(ball.x-BALL/2>W)point(1);
+}
+function text(str,x,y,size=20,color='#f5f7ed',weight='900'){
+ ctx.fillStyle=color;ctx.textAlign='center';ctx.textBaseline='middle';ctx.font=`${weight} ${size}px ui-monospace,Menlo,Consolas,monospace`;ctx.fillText(str,x,y)
+}
+function render(){
+ ctx.clearRect(0,0,W,H);
+ ctx.fillStyle='#070a09';ctx.fillRect(0,0,W,H);
+ // Retro luminous borders; straight lines and solid white pixels like the original.
+ ctx.fillStyle='#edf0e4';ctx.fillRect(0,TOP-5,W,4);ctx.fillRect(0,BOTTOM+1,W,4);
+ for(let y=TOP+17;y<BOTTOM-17;y+=37)ctx.fillRect(W/2-3,y,6,20);
+ // The small screen score is part of the classic cabinet appearance.
+ text(score1,W/2-104,89,60,'#f2f5e9');text(score2,W/2+104,89,60,'#f2f5e9');
+ // Rectangular racket silhouettes.
+ ctx.fillStyle='#f2f6eb';ctx.fillRect(LEFT,Math.round(left.y-PADH/2),PADW,PADH);
+ ctx.fillRect(RIGHT,Math.round(right.y-PADH/2),PADW,PADH);
+ if(mode==='running'&&wait>0){
+  ctx.fillStyle='#ecefe5';ctx.globalAlpha=.67;ctx.fillRect(W/2-BALL/2,H/2-BALL/2,BALL,BALL);ctx.globalAlpha=1;
+ }else if(mode==='running'||mode==='paused'||mode==='over'){
+  ctx.fillStyle='#f8fae9';ctx.fillRect(Math.round(ball.x-BALL/2),Math.round(ball.y-BALL/2),BALL,BALL);
+ }
+ for(const p of particle){ctx.globalAlpha=Math.min(.8,Math.max(0,p.life*2));ctx.fillStyle='#eff6ec';ctx.fillRect(p.x-2,p.y-2,4,4)}ctx.globalAlpha=1;
+ if(mode==='running'&&wait>0){text('READY',W/2,H/2-64,32,'#e6eddf');text(String(Math.max(1,Math.ceil(wait))),W/2,H/2-18,27,'#d6dccc')}
+ if(mode!=='running'){
+  ctx.fillStyle='rgba(4,7,8,.78)';ctx.fillRect(0,TOP+5,W,BOTTOM-TOP-9);
+  const title=mode==='intro'?'PONG!':mode==='paused'?'PAUSE':winningSide===1?'YOU WIN!':twoPlayer?'P2 WINS!':'CPU WINS';
+  text(title,W/2,H/2-69,mode==='intro'?78:56,'#f1f4e9');
+  text(mode==='intro'?'1972 ARCADE STYLE':mode==='paused'?'ゲームを一時停止中':'GAME OVER',W/2,H/2-10,24,'#c7d2cb');
+  text(mode==='intro'?'11点先取  •  打ち返して勝とう！':mode==='paused'?'タップまたは再開ボタンで続ける':'もう一度挑戦しよう！',W/2,H/2+46,21,'#fff0b5');
+  text(mode==='intro'?'タップでスタート':mode==='paused'?'タップで再開':'タップでもう一度',W/2,H/2+97,18,'#d3ded3');
+ }
+}
+function frame(t){
+ let d=lastT?Math.min((t-lastT)/1000,.05):0;lastT=t;acc+=d;
+ // Fixed timestep: same ball speed on 60 / 90 / 120 Hz phones.
+ let loops=0;while(acc>=STEP&&loops<8){step(STEP);acc-=STEP;loops++}
+ if(loops===8)acc=0;
+ stamp=t;render();requestAnimationFrame(frame);
+}
+// Read-only hooks for browser verification; hidden from the normal interface.
+if(new URLSearchParams(location.search).has('test')){
+ window.__pongTest={
+  state:()=>({mode,twoPlayer,difficulty,score1,score2,rally,wait,ball:{...ball},left:{...left},right:{...right}}),
+  step:(count=1)=>{for(let i=0;i<count;i++)step(STEP);render()},
+  setBall:(b)=>Object.assign(ball,b),setPaddles:(l,r)=>{if(l!==undefined)left.y=left.target=l;if(r!==undefined)right.y=right.target=r},
+  forcePoint:(who)=>point(who),forceServe:()=>{wait=0;launch()},setMode:(m)=>{mode=m;updateUI()}
+ };
+}
+resetPaddles();holdServe(1,0);updateUI();requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>
