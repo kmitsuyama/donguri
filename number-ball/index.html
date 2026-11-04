@@ -1,0 +1,255 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<meta name="theme-color" content="#0b142a">
+<title>NUMBER BALL — 1から9のナンバーハント</title>
+<style>
+:root{color-scheme:dark;--bg:#0b142a;--panel:#14233c;--line:#385575;--text:#f1f7ff;--muted:#a4bbce;--gold:#ffe08d;--cyan:#8ff2e7;--red:#ff7d90}
+*{box-sizing:border-box}
+html{background:var(--bg);overscroll-behavior:none}
+body{margin:0;min-height:100dvh;background:radial-gradient(ellipse at 50% -14%,#274367 0,#0e1b35 55%,#070e1d 100%);color:var(--text);font-family:system-ui,-apple-system,"Hiragino Kaku Gothic ProN","Noto Sans JP",sans-serif;user-select:none;-webkit-user-select:none}
+button{font:inherit;cursor:pointer;-webkit-tap-highlight-color:transparent;touch-action:manipulation}
+.app{width:min(100%,500px);margin:auto;padding:10px 12px max(14px,env(safe-area-inset-bottom))}
+.heading{display:flex;justify-content:space-between;align-items:flex-end;gap:8px;margin:2px 2px 8px}
+h1{font-size:clamp(25px,7vw,35px);line-height:1;margin:0;font-weight:1000;letter-spacing:.035em;color:#fff2d2;text-shadow:0 3px #b36d62,0 0 24px #faac6788}
+.subtitle{font-size:10px;font-weight:800;color:#b6d5e7;letter-spacing:.14em;margin-top:5px}
+.edition{font-size:10px;white-space:nowrap;color:#b9d2e8;border:1px solid #507594;border-radius:16px;padding:5px 8px}
+.hud{display:grid;grid-template-columns:1fr 1fr 1fr;gap:7px;margin-bottom:8px}
+.stat{background:#0b142abd;border:1px solid #405e80;border-radius:10px;text-align:center;padding:6px 2px 5px;box-shadow:inset 0 1px #ffffff10}
+.stat span{display:block;font-size:10px;color:#b4c7db;font-weight:850;letter-spacing:.09em}
+.stat strong{display:block;font-size:clamp(17px,4.8vw,23px);font-weight:1000;color:#fce9b8;font-variant-numeric:tabular-nums;line-height:1.4}
+.stat strong.next{color:var(--cyan)}.stat strong.danger{color:var(--red)}
+.stage-shell{position:relative;margin:auto;width:min(100%,calc((100dvh - 285px) * .75));min-width:min(100%,206px);padding:5px;background:#192b48;border:2px solid #7097bd;border-radius:15px;box-shadow:0 0 0 2px #172742,0 14px 34px #0009}
+canvas{display:block;width:100%;height:auto;aspect-ratio:420/560;border-radius:9px;background:#07162d;touch-action:manipulation}
+.status{display:flex;justify-content:space-between;align-items:center;gap:8px;min-height:40px;margin:10px 1px 8px}
+.status-message{color:#d7e8fa;font-size:12px;font-weight:750;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.status-message b{color:#ffe9a7}
+.small-btn{height:34px;flex-shrink:0;border-radius:9px;padding:0 13px;border:1px solid #7191b0;color:#f5f7ff;background:#1e3552;font-size:12px;font-weight:900}
+.turn-button{display:flex;align-items:center;justify-content:center;gap:14px;width:100%;min-height:74px;border:2px solid #ffe49f;border-radius:16px;background:linear-gradient(#f6d48c,#dea461);color:#412c37;box-shadow:0 5px 0 #875a42,0 10px 25px #0006;touch-action:none;-webkit-user-select:none;user-select:none;transition:background .09s}
+.turn-button .turn-symbol{font-size:34px;font-weight:900;line-height:1}
+.turn-button strong{font-size:21px;font-weight:1000;letter-spacing:.07em}
+.turn-button small{display:block;font-size:11px;font-weight:750;margin-top:2px}
+.turn-button.active{transform:translateY(4px);box-shadow:0 1px 0 #875a42,0 5px 15px #0006;background:linear-gradient(#a9f7e9,#65c8bd);border-color:#c6fff3}
+.instructions{text-align:center;margin:12px 2px 0;color:#bdcddd;font-size:11px;line-height:1.7}
+.instructions b{color:#fff0b7}
+.progress{display:flex;gap:5px;justify-content:center;margin-top:11px}
+.dot-step{width:27px;height:27px;display:flex;align-items:center;justify-content:center;border:1px solid #4a6685;border-radius:50%;font-weight:900;font-size:12px;background:#17263c;color:#8ca7c1}
+.dot-step.current{color:#132b38;background:var(--cyan);border-color:#c4fff5;box-shadow:0 0 14px #62dfce77}
+.dot-step.done{background:#436b58;border-color:#7dcf9d;color:#b6f7c6}
+@media(max-height:720px){.app{padding-top:6px}.heading{margin-bottom:5px}.hud{margin-bottom:5px}.stage-shell{width:min(100%,calc((100dvh - 265px) * .75))}.status{margin:7px 1px 5px;min-height:35px}.turn-button{min-height:64px}.instructions{font-size:10px;margin-top:7px}.progress{margin-top:7px}}
+@media(max-height:640px){.instructions{display:none}.turn-button{min-height:60px}.stage-shell{width:min(100%,calc((100dvh - 255px) * .75))}.progress{margin-top:7px}}
+@media(min-width:700px){.app{padding-top:22px}.stage-shell{width:min(100%,380px)}}
+</style>
+</head>
+<body>
+<main class="app">
+ <header class="heading"><div><h1>NUMBER BALL</h1><div class="subtitle">1 → 9 · RETRO ARCADE</div></div><div class="edition">ONE BUTTON GAME</div></header>
+ <section class="hud" aria-label="ゲーム状況">
+  <div class="stat"><span>NEXT</span><strong class="next" id="next">1</strong></div>
+  <div class="stat"><span>MISS</span><strong class="danger" id="miss">0 / 3</strong></div>
+  <div class="stat"><span>TIME</span><strong id="time">00:00</strong></div>
+ </section>
+ <div class="stage-shell"><canvas id="game" width="420" height="560" aria-label="数の小さい順に1から9の玉を集めるゲーム"></canvas></div>
+ <div class="status"><div class="status-message" id="status">数字の<b>1</b>から順に集めよう！</div><button class="small-btn" id="start" type="button">▶ スタート</button><button class="small-btn" id="sound" type="button" aria-label="効果音の切り替え">♪ ON</button></div>
+ <button id="turn" class="turn-button" type="button" aria-label="押している間、右に曲がる" aria-pressed="false"><span class="turn-symbol">↻</span><span><strong>右に曲がる</strong><small>押している間だけ なめらかに右旋回</small></span></button>
+ <div class="progress" aria-label="回収順序" id="progress"></div>
+ <p class="instructions">玉は<b>自動で前進</b>。ボタンを離すと直進します。<br><b>光る数字</b>を1から順番に集めよう！間違えると180°反転。<b>3回で終了</b>。<br>PCでは<b>スペースキー・右矢印キー</b>長押しでも操作できます。</p>
+</main>
+<script>
+(()=>{'use strict';
+const canvas=document.getElementById('game'),ctx=canvas.getContext('2d'),el=id=>document.getElementById(id);
+const W=420,H=560,R=19,SPEED=146,TURN=3.18,PI=Math.PI,TAU=PI*2;
+const clamp=(x,a,b)=>Math.max(a,Math.min(b,x));
+const rand=(a,b)=>a+Math.random()*(b-a);
+const distance=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y);
+let state='intro',balls=[],player=null,target=1,misses=0,elapsed=0,bestTime=0,turning=false;
+let particles=[],toasts=[],flash=0,blink=0,audio=null,soundOn=true,lastT=0,notice='';
+try{bestTime=Number(localStorage.getItem('number_ball_best_time'))||0}catch(e){}
+function formatTime(t){const m=Math.floor(t/60),s=Math.floor(t%60);return `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`}
+function updateHUD(){
+ el('next').textContent=target<=9?target:'✓';el('miss').textContent=`${misses} / 3`;
+ el('time').textContent=formatTime(elapsed);
+ el('start').textContent=state==='running'?'Ⅱ 一時停止':state==='paused'?'▶ 再開':state==='intro'?'▶ スタート':'↻ もう一度';
+ const msg=state==='intro'?'数字の<b>1</b>から順に集めよう！':state==='running'?`次は <b>${target}</b> の玉を取ろう！`:state==='paused'?'一時停止中':state==='over'?'3回間違えました':'1から9まで全部クリア！';
+ el('status').innerHTML=msg;
+ let html='';for(let n=1;n<=9;n++){const cls=n<target?'done':n===target?'current':'';html+=`<div class="dot-step ${cls}">${n<target?'✓':n}</div>`}el('progress').innerHTML=html;
+}
+function placeBalls(){
+ const b=[];
+ for(let n=1;n<=9;n++){
+  let placed=false;
+  for(let tries=0;tries<1800;tries++){
+   const cand={n,x:rand(51,W-51),y:rand(56,H-56),alive:true};
+   if(b.every(other=>distance(cand,other)>78)){b.push(cand);placed=true;break}
+  }
+  if(!placed){return false}
+ }
+ balls=b;return true;
+}
+function randomize(){
+ // Random independent locations, with a guaranteed non-overlapping fallback.
+ if(!placeBalls()){
+  const cols=[90,210,330],rows=[100,280,460];
+  balls=Array.from({length:9},(_,i)=>({n:i+1,x:cols[i%3]+rand(-13,13),y:rows[Math.floor(i/3)]+rand(-13,13),alive:true}));
+ }
+ for(let k=0;k<2000;k++){
+  const p={x:rand(32,W-32),y:rand(32,H-32),a:rand(0,TAU)};
+  if(balls.every(b=>distance(p,b)>92)){player=p;return}
+ }
+ player={x:W/2,y:H/2,a:rand(0,TAU)};
+}
+function begin(){target=1;misses=0;elapsed=0;flash=0;blink=0;particles=[];toasts=[];notice='';randomize();state='running';setTurn(false);updateHUD();beep(550,.11,'sine',.035);beep(830,.18,'triangle',.03,.12)}
+function toggle(){
+ if(state==='intro'||state==='clear'||state==='over')begin();
+ else if(state==='running'){state='paused';setTurn(false)}
+ else if(state==='paused')state='running';
+ updateHUD();
+}
+el('start').addEventListener('click',toggle);
+el('sound').addEventListener('click',()=>{soundOn=!soundOn;el('sound').textContent=soundOn?'♪ ON':'♪ OFF';if(soundOn)beep(730,.075,'sine',.03)});
+function beep(freq,dur=.07,type='sine',vol=.03,offset=0){if(!soundOn)return;try{
+ const AC=window.AudioContext||window.webkitAudioContext;if(!AC)return;if(!audio)audio=new AC();if(audio.state==='suspended')audio.resume().catch(()=>{});
+ const t=audio.currentTime+offset,osc=audio.createOscillator(),g=audio.createGain();osc.type=type;osc.frequency.setValueAtTime(freq,t);
+ g.gain.setValueAtTime(.0001,t);g.gain.exponentialRampToValueAtTime(vol,t+.008);g.gain.exponentialRampToValueAtTime(.0001,t+dur);
+ osc.connect(g);g.connect(audio.destination);osc.start(t);osc.stop(t+dur+.01);
+ }catch(e){}}
+function sfx(which){if(which==='pick'){beep(500+target*68,.13,'triangle',.042);beep(950+target*31,.11,'sine',.023,.08)}
+ else if(which==='wall')beep(210,.04,'triangle',.014);
+ else if(which==='wrong'){beep(155,.18,'sawtooth',.043);beep(110,.18,'triangle',.025,.1)}
+ else if(which==='clear')for(let i=0;i<5;i++)beep([523,659,784,1046,1318][i],.2,'triangle',.042,i*.12);
+ else if(which==='over'){beep(280,.3,'sawtooth',.04);beep(130,.43,'sine',.04,.23)}
+}
+function setTurn(v){turning=!!v&&state==='running';el('turn').classList.toggle('active',turning);el('turn').setAttribute('aria-pressed',String(turning))}
+const control=el('turn');
+control.addEventListener('pointerdown',e=>{e.preventDefault();try{control.setPointerCapture(e.pointerId)}catch(_){}setTurn(true)});
+for(const type of ['pointerup','pointercancel','lostpointercapture'])control.addEventListener(type,()=>setTurn(false));
+// Physical keys and touchscreen are both supported, without covering the game area.
+const held=new Set();
+window.addEventListener('keydown',e=>{if(['Space','ArrowRight','Enter'].includes(e.code))e.preventDefault();
+ if(e.code==='Enter'&&!e.repeat){toggle();return}
+ if(e.code==='Space'||e.code==='ArrowRight'){held.add(e.code);setTurn(true)}
+});
+window.addEventListener('keyup',e=>{if(held.delete(e.code)&&held.size===0)setTurn(false)});
+window.addEventListener('blur',()=>{held.clear();setTurn(false)});
+document.addEventListener('visibilitychange',()=>{if(document.hidden){held.clear();setTurn(false);if(state==='running'){state='paused';updateHUD()}}});
+canvas.addEventListener('pointerdown',e=>{if(state!=='running'){e.preventDefault();toggle()}});
+function sparks(x,y,color='#e8f6ff',amount=12){for(let i=0;i<amount;i++){
+ const a=rand(0,TAU),s=rand(25,100);particles.push({x,y,vx:Math.cos(a)*s,vy:Math.sin(a)*s,ttl:rand(.3,.7),max:.7,size:rand(1.8,4.1),color});
+}}
+function floatText(x,y,text,color='#fff2b8'){toasts.push({x,y,text,color,ttl:1.0})}
+function collect(b){
+ b.alive=false;sparks(b.x,b.y,'#a0ffee',22);floatText(b.x,b.y-26,'NICE!','#b4fff5');sfx('pick');target++;flash=.11;
+ if(target===10){state='clear';setTurn(false);sfx('clear');if(!bestTime||elapsed<bestTime){bestTime=elapsed;try{localStorage.setItem('number_ball_best_time',String(bestTime))}catch(e){}}}
+ updateHUD();
+}
+function wrong(b){
+ misses++;player.a=(player.a+PI)%TAU;
+ // Move outside the collision so the same number cannot trigger another miss.
+ let dx=player.x-b.x,dy=player.y-b.y,d=Math.hypot(dx,dy);
+ if(d<.001){dx=-Math.cos(player.a);dy=-Math.sin(player.a);d=1}
+ const sep=R*2+3;
+ player.x=clamp(b.x+dx/d*sep,R,W-R);player.y=clamp(b.y+dy/d*sep,R,H-R);
+ sparks(b.x,b.y,'#fa7b88',13);floatText(b.x,b.y-28,'180° TURN','#ffacb6');sfx('wrong');blink=.3;
+ if(misses>=3){state='over';setTurn(false);sfx('over')}
+ updateHUD();
+}
+function step(dt){
+ if(state!=='running')return;
+ elapsed+=dt;blink=Math.max(0,blink-dt);flash=Math.max(0,flash-dt);
+ // Several shorter steps prevent the fast ball from passing through a numbered ball.
+ const count=Math.max(1,Math.ceil(dt/.007));const h=dt/count;
+ for(let k=0;k<count;k++){
+  if(turning)player.a=(player.a+TURN*h)%TAU;
+  let vx=Math.cos(player.a),vy=Math.sin(player.a);
+  player.x+=vx*SPEED*h;player.y+=vy*SPEED*h;
+  let hitX=false,hitY=false;
+  if(player.x<R){player.x=R+(R-player.x);hitX=true}
+  if(player.x>W-R){player.x=W-R-(player.x-(W-R));hitX=true}
+  if(player.y<R){player.y=R+(R-player.y);hitY=true}
+  if(player.y>H-R){player.y=H-R-(player.y-(H-R));hitY=true}
+  if(hitX||hitY){if(hitX)vx=-vx;if(hitY)vy=-vy;player.a=(Math.atan2(vy,vx)+TAU)%TAU;sfx('wall')}
+  for(const b of balls){
+   if(!b.alive)continue;
+   if(distance(player,b)>R*2-1)continue;
+   if(b.n===target){collect(b)}else{wrong(b)}
+   break;
+  }
+  if(state!=='running')break;
+ }
+}
+function rounded(x,y,w,h,r,color){ctx.fillStyle=color;ctx.beginPath();ctx.roundRect(x,y,w,h,r);ctx.fill()}
+function background(){
+ const g=ctx.createLinearGradient(0,0,W,H);g.addColorStop(0,'#112946');g.addColorStop(.55,'#091b34');g.addColorStop(1,'#071528');ctx.fillStyle=g;ctx.fillRect(0,0,W,H);
+ ctx.strokeStyle='#8cbee70b';ctx.lineWidth=1;for(let x=20;x<W;x+=28){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,H);ctx.stroke()}for(let y=20;y<H;y+=28){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(W,y);ctx.stroke()}
+ ctx.lineWidth=5;ctx.strokeStyle='#83b4d2';ctx.strokeRect(2.5,2.5,W-5,H-5);
+ ctx.lineWidth=1;ctx.strokeStyle='#d8effb44';ctx.strokeRect(11.5,11.5,W-23,H-23);
+ for(const x of [26,W-26])for(const y of [26,H-26]){ctx.fillStyle='#5f99bb88';ctx.beginPath();ctx.arc(x,y,2.5,0,TAU);ctx.fill()}
+ if(flash>0){ctx.fillStyle=`rgba(132,248,217,${flash*.19})`;ctx.fillRect(0,0,W,H)}
+}
+function drawBall(b){
+ if(!b.alive)return;const active=b.n===target;
+ ctx.save();ctx.translate(b.x,b.y);
+ if(active){const pulse=.5+.5*Math.sin(elapsed*6);ctx.strokeStyle=`rgba(155,255,235,${.36+.32*pulse})`;ctx.lineWidth=2.4;ctx.beginPath();ctx.arc(0,0,R+6+2*pulse,0,TAU);ctx.stroke();ctx.shadowBlur=22;ctx.shadowColor='#71f5e2'}
+ else{ctx.shadowBlur=6;ctx.shadowColor='#5679a750'}
+ const g=ctx.createRadialGradient(-7,-9,2,0,0,R);
+ if(active){g.addColorStop(0,'#f7fff0');g.addColorStop(.36,'#a7fff0');g.addColorStop(1,'#39adab')}
+ else{g.addColorStop(0,'#7b94b9');g.addColorStop(.38,'#385477');g.addColorStop(1,'#23334e')}
+ ctx.fillStyle=g;ctx.beginPath();ctx.arc(0,0,R,0,TAU);ctx.fill();ctx.shadowBlur=0;
+ ctx.strokeStyle=active?'#d4fff1':'#8cafd0';ctx.lineWidth=1.4;ctx.stroke();
+ ctx.font='1000 22px system-ui,sans-serif';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillStyle=active?'#123d45':'#e6efff';ctx.fillText(String(b.n),0,1);ctx.restore();
+}
+function drawPlayer(){if(!player)return;
+ ctx.save();ctx.translate(player.x,player.y);
+ ctx.shadowColor='#ffb978';ctx.shadowBlur=14;
+ const g=ctx.createRadialGradient(-6,-7,2,0,0,R);g.addColorStop(0,'#ffffff');g.addColorStop(.4,'#f9e8c6');g.addColorStop(1,'#df946d');ctx.fillStyle=g;ctx.beginPath();ctx.arc(0,0,R,0,TAU);ctx.fill();ctx.shadowBlur=0;
+ ctx.lineWidth=2;ctx.strokeStyle='#ffebc9';ctx.stroke();
+ ctx.rotate(player.a);
+ ctx.fillStyle='#8a4050';ctx.beginPath();ctx.moveTo(13,0);ctx.lineTo(-6,-7);ctx.lineTo(-3,0);ctx.lineTo(-6,7);ctx.closePath();ctx.fill();
+ ctx.fillStyle='#fff2d0';ctx.beginPath();ctx.arc(-5,0,3,0,TAU);ctx.fill();ctx.restore();
+}
+function drawEffects(dt){
+ for(const p of particles){if(state==='running'){p.x+=p.vx*dt;p.y+=p.vy*dt;p.vx*=.97;p.vy*=.97;p.ttl-=dt}
+ ctx.globalAlpha=clamp(p.ttl/p.max,0,1);ctx.fillStyle=p.color;ctx.beginPath();ctx.arc(p.x,p.y,p.size,0,TAU);ctx.fill()}ctx.globalAlpha=1;
+ particles=particles.filter(p=>p.ttl>0).slice(-140);
+ for(const t of toasts){if(state==='running'){t.y-=18*dt;t.ttl-=dt}ctx.save();ctx.globalAlpha=clamp(t.ttl*2,0,1);ctx.textAlign='center';ctx.font='900 14px system-ui,sans-serif';ctx.lineWidth=3;ctx.strokeStyle='#16243e';ctx.strokeText(t.text,t.x,t.y);ctx.fillStyle=t.color;ctx.fillText(t.text,t.x,t.y);ctx.restore()}
+ toasts=toasts.filter(t=>t.ttl>0);
+}
+function overlay(){if(state==='running')return;
+ ctx.save();ctx.fillStyle='#071327cc';ctx.fillRect(0,0,W,H);
+ const boxY=184;rounded(31,boxY,W-62,208,18,'#17263e');ctx.strokeStyle='#8fb5c9';ctx.lineWidth=2;ctx.strokeRect(42,boxY+11,W-84,185);
+ ctx.textAlign='center';ctx.fillStyle=state==='over'?'#ff8e9e':'#fff0ba';ctx.shadowBlur=15;ctx.shadowColor=state==='over'?'#d84a70':'#d5aa6b';
+ ctx.font=state==='over'?'1000 43px Impact,system-ui,sans-serif':'1000 39px Impact,system-ui,sans-serif';
+ ctx.fillText(state==='intro'?'NUMBER BALL':state==='paused'?'PAUSE':state==='clear'?'ALL CLEAR!':'GAME OVER',W/2,boxY+74);ctx.shadowBlur=0;
+ ctx.font='750 15px system-ui,sans-serif';ctx.fillStyle='#d5e7f2';
+ if(state==='intro'){
+  ctx.fillText('1 → 9 の玉を順番に取ろう',W/2,boxY+115);
+  ctx.fillText('右旋回だけでゴールを目指せ！',W/2,boxY+140);
+  ctx.fillStyle='#ffe4a0';ctx.fillText('「スタート」を押して開始',W/2,boxY+178);
+ }else if(state==='paused'){
+  ctx.fillText('ゲームを一時停止しています',W/2,boxY+121);
+  ctx.fillStyle='#ffe4a0';ctx.fillText('「再開」を押して続ける',W/2,boxY+171);
+ }else if(state==='over'){
+  ctx.fillText('違う番号の玉に3回当たりました',W/2,boxY+116);
+  ctx.fillText(`取れた玉：${target-1} / 9`,W/2,boxY+143);
+  ctx.fillStyle='#ffe4a0';ctx.fillText('「もう一度」で再挑戦',W/2,boxY+180);
+ }else{
+  ctx.fillText('1 から 9 まで全部ゲット！',W/2,boxY+112);
+  ctx.fillText(`クリアタイム  ${formatTime(elapsed)}`,W/2,boxY+141);
+  ctx.fillStyle='#ffe4a0';ctx.fillText(bestTime?`ベスト  ${formatTime(bestTime)}`:'おめでとう！',W/2,boxY+175);
+ }
+ ctx.restore();
+}
+function draw(dt){background();for(const b of balls)drawBall(b);drawPlayer();drawEffects(dt);overlay()}
+function frame(now){const dt=lastT?clamp((now-lastT)/1000,0,.035):0;lastT=now;if(state==='running')step(dt);draw(dt);requestAnimationFrame(frame)}
+// Lightweight deterministic hooks only available when ?test=1 is supplied.
+if(new URLSearchParams(location.search).has('test'))window.__numberBallTest={
+ state:()=>({state,target,misses,elapsed,player:player&&{...player},balls:balls.map(b=>({...b})),turning}),
+ start:begin, step, setTurning:setTurn, setPlayer:(p)=>{player={...player,...p}},setBalls:(b)=>{balls=b.map(x=>({...x}))},setTarget:(n)=>{target=n;updateHUD()},setMisses:(n)=>{misses=n;updateHUD()},getR:()=>R
+};
+randomize();updateHUD();requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>
