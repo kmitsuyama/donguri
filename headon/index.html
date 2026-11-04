@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
 <meta name="theme-color" content="#0b1539">
-<title>HEAD ON — レトロ・ドットレーサー</title>
+<title>HEAD ON — レトロ・ドットレーサー v1.1</title>
 <style>
 :root{color-scheme:dark;--bg:#090f25;--text:#edf5ff;--muted:#a6bce1;--blue:#86bdff;--yellow:#f8db77;--red:#fd6f77}
 *{box-sizing:border-box}html{overscroll-behavior:none;background:var(--bg)}
@@ -41,7 +41,7 @@ canvas{display:block;width:100%;height:auto;aspect-ratio:432 / 568;background:#0
 </head>
 <body>
 <main class="app">
-<header class="header"><div><h1>HEAD ON</h1><small>RETRO DOT RACER</small></div><span class="edition">1979 ARCADE STYLE</span></header>
+<header class="header"><div><h1>HEAD ON</h1><small>RETRO DOT RACER</small></div><span class="edition">v1.1 · ARCADE STYLE</span></header>
 <section class="hud" aria-label="スコア">
 <div class="stat"><label>SCORE</label><span id="score">00000</span></div>
 <div class="stat"><label>BEST</label><span id="best">00000</span></div>
@@ -55,7 +55,7 @@ canvas{display:block;width:100%;height:auto;aspect-ratio:432 / 568;background:#0
 <button class="control boost" id="boost" aria-label="押している間加速">⚡ 加速<small>押している間</small></button>
 <button class="control" id="outer" aria-label="外側の車線に移る">外側 ▶<small>車線変更</small></button>
 </div>
-<p class="tips"><strong>遊び方：</strong>自車は自動で反時計回り。上下の中央にある<strong>切れ目</strong>で車線変更します。<br>内側・外側を押して行き先を予約、加速は長押し。赤い車とは正面衝突しないように！</p>
+<p class="tips"><strong>遊び方：</strong>自車は自動で反時計回り。<strong>上下左右の4か所</strong>の切れ目で車線変更できます。<br>内側・外側を押して行き先を予約、加速は長押し。赤い車とは正面衝突しないように！</p>
 </main>
 <script>
 (()=>{'use strict';
@@ -89,19 +89,26 @@ function at(lane,u){
  return line(d,r-k-d,t,Math.PI);
 }
 function rectangleBorderPoint(k,u){const q=track(k-.5);return at(k-.5,u)}
+// All four mid-side openings (top / bottom / left / right) are lane-change gates.
+// The quarter-lap positions are exact for these symmetric rounded rectangles.
 function getGate(lane,u){
  const p=at(lane,u),q=track(lane);
- if(Math.abs(p.x-CX)<38&&Math.abs(p.y-q.t)<1.5)return 0;
- if(Math.abs(p.x-CX)<38&&Math.abs(p.y-q.b)<1.5)return 1;
+ if(Math.abs(p.x-CX)<38&&Math.abs(p.y-q.t)<1.5)return 0; // top
+ if(Math.abs(p.x-CX)<38&&Math.abs(p.y-q.b)<1.5)return 1; // bottom
+ if(Math.abs(p.y-CH/2)<38&&Math.abs(p.x-q.l)<1.5)return 2; // left
+ if(Math.abs(p.y-CH/2)<38&&Math.abs(p.x-q.r)<1.5)return 3; // right
  return -1;
 }
-// Lane changes happen only at the central upper/lower openings.
 function changeLane(entity,newLane,gate){
  const old=at(entity.lane,entity.u),same=track(newLane);
  entity.lane=newLane;
- // Preserve X on the open, straight portion of the track after crossing lanes.
- if(gate===0){const dx=old.x-CX;entity.u=norm(dx<=0?(-dx/same.length):1-dx/same.length)}
- else {entity.u=norm(.5+(old.x-CX)/same.length)}
+ // Keep the same screen-space position along the open side.
+ // u increases leftwards at the top, rightwards at the bottom,
+ // downwards on the left, and upwards on the right.
+ if(gate===0)entity.u=norm((CX-old.x)/same.length);
+ else if(gate===1)entity.u=norm(.5+(old.x-CX)/same.length);
+ else if(gate===2)entity.u=norm(.25+(old.y-CH/2)/same.length);
+ else if(gate===3)entity.u=norm(.75-(old.y-CH/2)/same.length);
 }
 const colors={blue:'#80bcff',pale:'#d8ecff',gold:'#ffe69a',red:'#ff667c'};
 let mode='intro',level=1,score=0,best=0,lives=3,nextLife=5000;
@@ -145,7 +152,10 @@ function makeDots(){
    for(let i=0;i<N;i++){
      const u=norm((i+.48)/N);
      const p=at(lane,u);
-     if(Math.abs(p.x-CX)<19&&(Math.abs(p.y-track(lane).t)<3||Math.abs(p.y-track(lane).b)<3))continue;
+     const q=tracks[lane];
+     // Don't place dots over any of the four crossing openings.
+     if(Math.abs(p.x-CX)<23&&(Math.abs(p.y-q.t)<3||Math.abs(p.y-q.b)<3))continue;
+     if(Math.abs(p.y-CH/2)<23&&(Math.abs(p.x-q.l)<3||Math.abs(p.x-q.r)<3))continue;
      dots.push({lane,u,alive:true,hot:false});
    }
  }
@@ -274,19 +284,25 @@ function boundary(k){
  ctx.beginPath();
  for(let i=0;i<=total;i++){
    const q=rectangleBorderPoint(k,i/total), top=EDGE+k*INSET,bot=CH-EDGE-k*INSET;
-   const gap=Math.abs(q.x-CX)<31&&(Math.abs(q.y-top)<1.7||Math.abs(q.y-bot)<1.7);
-   if(gap){drawing=false;continue}
+   const left=EDGE+k*INSET,right=CW-EDGE-k*INSET;
+   const topBottomGap=Math.abs(q.x-CX)<31&&(Math.abs(q.y-top)<1.7||Math.abs(q.y-bot)<1.7);
+   const leftRightGap=Math.abs(q.y-CH/2)<31&&(Math.abs(q.x-left)<1.7||Math.abs(q.x-right)<1.7);
+   if(topBottomGap||leftRightGap){drawing=false;continue}
    if(!drawing){ctx.moveTo(q.x,q.y);drawing=true}else ctx.lineTo(q.x,q.y);
  }
  ctx.stroke();ctx.shadowBlur=0;
 }
 function drawRoad(){
  for(let i=0;i<=5;i++)boundary(i);
- // Subtle arrows at the only two legal crossing points.
- for(const y of [37,CH-37]){
-   ctx.strokeStyle='#65f3d056';ctx.lineWidth=1.4;
-   ctx.beginPath();ctx.moveTo(CX-15,y);ctx.lineTo(CX+15,y);ctx.moveTo(CX-6,y-4);ctx.lineTo(CX-13,y);ctx.lineTo(CX-6,y+4);ctx.moveTo(CX+6,y-4);ctx.lineTo(CX+13,y);ctx.lineTo(CX+6,y+4);ctx.stroke();
+ // Green double arrows indicate the four crossing points.
+ function arrows(x,y){
+   ctx.strokeStyle='#65f3d077';ctx.lineWidth=1.5;
+   ctx.beginPath();ctx.moveTo(x-15,y);ctx.lineTo(x+15,y);
+   ctx.moveTo(x-6,y-4);ctx.lineTo(x-13,y);ctx.lineTo(x-6,y+4);
+   ctx.moveTo(x+6,y-4);ctx.lineTo(x+13,y);ctx.lineTo(x+6,y+4);ctx.stroke();
  }
+ for(const y of [37,CH-37])arrows(CX,y);
+ for(const x of [33,CW-33])arrows(x,CH/2);
 }
 function drawDots(){
  for(const d of dots){if(!d.alive)continue;const p=at(d.lane,d.u);
@@ -359,6 +375,9 @@ function tick(t){
 if(new URLSearchParams(location.search).has('test')){
  window.__headonTest={state:()=>({mode,level,score,lives,pointsToNext,wantLane,player:player&&{...player},enemies:enemies.map(e=>({...e}))}),
  forceClear:()=>{for(const d of dots)d.alive=false;pointsToNext=0},
+ gate:(lane,u)=>getGate(lane,u),
+ at:(lane,u)=>at(lane,u),
+ teleport:(lane,u)=>{if(player){player.lane=lane;player.renderLane=lane;player.u=norm(u);player.gateLock=-1;wantLane=lane;updateHUD()}},
  setEnemySpeed:(v)=>{for(const e of enemies)e.speed=v},
  setPlayerInvulnerable:(n)=>{if(player)player.invuln=n},
  step:(n=1)=>{for(let i=0;i<n;i++)update(1/60);draw()},
