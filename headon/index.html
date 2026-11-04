@@ -1,0 +1,371 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<meta name="theme-color" content="#0b1539">
+<title>HEAD ON — レトロ・ドットレーサー</title>
+<style>
+:root{color-scheme:dark;--bg:#090f25;--text:#edf5ff;--muted:#a6bce1;--blue:#86bdff;--yellow:#f8db77;--red:#fd6f77}
+*{box-sizing:border-box}html{overscroll-behavior:none;background:var(--bg)}
+body{margin:0;min-height:100dvh;color:var(--text);font-family:system-ui,-apple-system,"Hiragino Kaku Gothic ProN","Noto Sans JP",sans-serif;background:radial-gradient(ellipse at 50% -20%,#233761 0%,#0b1431 55%,#070b19 100%);touch-action:pan-y}
+.app{width:min(100%,490px);margin:auto;padding:10px 12px max(12px,env(safe-area-inset-bottom));}
+.header{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:8px;gap:8px}
+h1{margin:0;color:#f2f6ff;font-size:clamp(28px,7vw,40px);line-height:1;letter-spacing:.10em;font-family:Impact,"Arial Narrow",system-ui,sans-serif;font-style:italic;text-shadow:2px 2px #4268b5,0 0 18px #6d9eff7a}
+.header small{font-size:10px;letter-spacing:.13em;color:#a9c6ff;font-weight:900}
+.header .edition{color:#e5c8a1;font-size:10px;white-space:nowrap;border:1px solid #897b91;border-radius:30px;padding:4px 8px}
+.hud{display:grid;grid-template-columns:1fr .8fr 1fr 1.15fr;gap:6px;margin-bottom:9px}
+.stat{background:#080e23b8;border:1px solid #506a97;border-radius:9px;text-align:center;padding:5px 2px}
+.stat label{display:block;color:#a2badb;font-size:9px;font-weight:900;letter-spacing:.09em}
+.stat span{display:block;font-size:clamp(14px,3.8vw,21px);font-weight:900;font-variant-numeric:tabular-nums;color:#fff0bb;line-height:1.35;white-space:nowrap}
+.stat .red{color:#ff8495}
+.stage-wrap{width:min(100%,calc((100dvh - 238px) * .75));min-width:min(100%,230px);margin:0 auto;background:#101d46;border:2px solid #7795ca;border-radius:13px;padding:5px;box-shadow:0 0 0 2px #1c2951,0 16px 36px #0008;position:relative}
+canvas{display:block;width:100%;height:auto;aspect-ratio:432 / 568;background:#06174a;border-radius:7px;touch-action:none;user-select:none;-webkit-user-select:none}
+.toolbar{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:10px 0 8px}
+.small-btn{height:35px;border:1px solid #708bb8;background:#1a3157;color:#dceaff;padding:0 14px;border-radius:9px;font-weight:900;cursor:pointer;font-size:13px}
+.help{font-size:10px;font-weight:800;color:#d3e4ff}
+.help b{color:#ffe18b}
+.pad{display:grid;grid-template-columns:1fr 1.14fr 1fr;gap:9px;touch-action:none;user-select:none}
+.control{border-radius:14px;border:1px solid #7c9ecb;min-height:62px;padding:8px 4px;background:linear-gradient(#354c78,#182e51);color:#fff;box-shadow:inset 0 1px #ffffff24,0 4px #0b1930;font-family:inherit;font-weight:1000;font-size:16px;cursor:pointer;touch-action:none;-webkit-tap-highlight-color:transparent}
+.control:active,.control.active{transform:translateY(3px);box-shadow:inset 0 1px #ffffff24,0 1px #0b1930;background:linear-gradient(#48709e,#203960)}
+.control small{display:block;color:#c6d9f8;font-size:10px;font-weight:700;margin-top:1px}
+.control.boost{background:linear-gradient(#ffdb8e,#e2a74e);border-color:#ffe4a3;color:#3d2b3f;box-shadow:inset 0 1px #fff5ca,0 4px #85582e}
+.control.boost small{color:#65482d}
+.control.boost:active,.control.boost.active{background:linear-gradient(#ffc45e,#dc8e3a);box-shadow:inset 0 1px #fff5ca,0 1px #85582e}
+.tips{margin:10px auto 0;font-size:11px;color:#b0c7e6;line-height:1.55;text-align:center}
+.tips strong{color:#fff0b5}
+@media(max-height:710px){.app{padding-top:6px}.header{margin-bottom:6px}.hud{margin-bottom:6px}.stage-wrap{width:min(100%,calc((100dvh - 219px) * .75))}.toolbar{margin:7px 0 7px}.tips{margin-top:7px;font-size:10px}.control{min-height:56px}}
+@media(max-height:650px){.tips{display:none}.control{min-height:50px}.stage-wrap{width:min(100%,calc((100dvh - 212px) * .75))}}
+@media(min-width:700px){.app{padding-top:22px}.stage-wrap{width:min(100%,420px)}}
+</style>
+</head>
+<body>
+<main class="app">
+<header class="header"><div><h1>HEAD ON</h1><small>RETRO DOT RACER</small></div><span class="edition">1979 ARCADE STYLE</span></header>
+<section class="hud" aria-label="スコア">
+<div class="stat"><label>SCORE</label><span id="score">00000</span></div>
+<div class="stat"><label>BEST</label><span id="best">00000</span></div>
+<div class="stat"><label>STAGE</label><span id="level">01</span></div>
+<div class="stat"><label>のこり</label><span id="lives" class="red">♥ ♥ ♥</span></div>
+</section>
+<div class="stage-wrap"><canvas id="game" width="432" height="568" aria-label="5本のコースでドットを回収し、赤い敵車を避けるゲーム"></canvas></div>
+<div class="toolbar"><button class="small-btn" id="start">▶ スタート</button><span class="help" id="status">ドットを全部集めよう！</span><button class="small-btn" id="sound" aria-label="効果音を切り替え">♪ ON</button></div>
+<div class="pad" aria-label="走行操作">
+<button class="control" id="inner" aria-label="内側の車線に移る">◀ 内側<small>車線変更</small></button>
+<button class="control boost" id="boost" aria-label="押している間加速">⚡ 加速<small>押している間</small></button>
+<button class="control" id="outer" aria-label="外側の車線に移る">外側 ▶<small>車線変更</small></button>
+</div>
+<p class="tips"><strong>遊び方：</strong>自車は自動で反時計回り。上下の中央にある<strong>切れ目</strong>で車線変更します。<br>内側・外側を押して行き先を予約、加速は長押し。赤い車とは正面衝突しないように！</p>
+</main>
+<script>
+(()=>{'use strict';
+const cv=document.getElementById('game'),ctx=cv.getContext('2d');
+const el=id=>document.getElementById(id);
+const CW=432,CH=568,CX=216,LANES=5,RADIUS=25,INSET=30,EDGE=18;
+const TWO_PI=Math.PI*2;
+const clamp=(n,a,b)=>Math.max(a,Math.min(b,n));
+const norm=v=>((v%1)+1)%1;
+const ringDiff=(a,b)=>Math.min(Math.abs(a-b),1-Math.abs(a-b));
+function track(lane){
+ const l=EDGE+(lane+.5)*INSET,t=EDGE+(lane+.5)*INSET,r=CW-l,b=CH-EDGE-(lane+.5)*INSET;
+ const w=r-l,h=b-t,curve=RADIUS,hs=w/2-curve,v=h-2*curve,arc=Math.PI*curve/2;
+ const length=4*hs+2*v+4*arc;
+ return {l,t,r,b,w,h,curve,hs,v,arc,length};
+}
+const tracks=Array.from({length:LANES},(_,i)=>track(i));
+function at(lane,u){
+ const q=track(lane),{l,t,r,b,curve:k,hs,v,arc,length}=q;
+ let d=norm(u)*length;
+ function line(s,ex,ey,dir){return {x:ex,y:ey,a:dir}}
+ function curve(cx,cy,theta){return {x:cx+k*Math.cos(theta),y:cy+k*Math.sin(theta),a:theta-Math.PI/2}}
+ if(d<hs)return line(d,CX-d,t,Math.PI);d-=hs;
+ if(d<arc)return curve(l+k,t+k,-Math.PI/2-d/k);d-=arc;
+ if(d<v)return line(d,l,t+k+d,Math.PI/2);d-=v;
+ if(d<arc)return curve(l+k,b-k,Math.PI-d/k);d-=arc;
+ if(d<2*hs)return line(d,l+k+d,b,0);d-=2*hs;
+ if(d<arc)return curve(r-k,b-k,Math.PI/2-d/k);d-=arc;
+ if(d<v)return line(d,r,b-k-d,-Math.PI/2);d-=v;
+ if(d<arc)return curve(r-k,t+k,-d/k);d-=arc;
+ return line(d,r-k-d,t,Math.PI);
+}
+function rectangleBorderPoint(k,u){const q=track(k-.5);return at(k-.5,u)}
+function getGate(lane,u){
+ const p=at(lane,u),q=track(lane);
+ if(Math.abs(p.x-CX)<38&&Math.abs(p.y-q.t)<1.5)return 0;
+ if(Math.abs(p.x-CX)<38&&Math.abs(p.y-q.b)<1.5)return 1;
+ return -1;
+}
+// Lane changes happen only at the central upper/lower openings.
+function changeLane(entity,newLane,gate){
+ const old=at(entity.lane,entity.u),same=track(newLane);
+ entity.lane=newLane;
+ // Preserve X on the open, straight portion of the track after crossing lanes.
+ if(gate===0){const dx=old.x-CX;entity.u=norm(dx<=0?(-dx/same.length):1-dx/same.length)}
+ else {entity.u=norm(.5+(old.x-CX)/same.length)}
+}
+const colors={blue:'#80bcff',pale:'#d8ecff',gold:'#ffe69a',red:'#ff667c'};
+let mode='intro',level=1,score=0,best=0,lives=3,nextLife=5000;
+let player,enemies=[],dots=[],wantLane=2,boosting=false,audio=null,soundOn=true;
+let clock=0,lastTime=0,cooldown=0,notice='',noticeTime=0,pointsToNext=0;
+try{best=Number(localStorage.getItem('headon_mobile_best'))||0}catch(e){}
+function updateHUD(){
+ el('score').textContent=String(score).padStart(5,'0');
+ el('best').textContent=String(best).padStart(5,'0');
+ el('level').textContent=String(((level-1)%8)+1).padStart(2,'0');
+ el('lives').textContent=lives?'♥ '.repeat(lives).trim():'—';
+ el('start').textContent=mode==='running'?'Ⅱ 一時停止':mode==='paused'?'▶ 再開':mode==='over'?'↻ もう一度':'▶ スタート';
+ let s='';if(mode==='running'){s=wantLane!==player.lane?'次の切れ目で '+(wantLane+1)+'車線目':'ドット残り '+pointsToNext;}
+ else if(mode==='intro')s='ドットを全部集めよう！';
+ else if(mode==='over')s='ゲームオーバー';
+ else if(mode==='paused')s='一時停止中';
+ else if(mode==='clear')s='ステージクリア！';
+ else s='次の車を準備中…';
+ el('status').textContent=s;
+}
+function sound(freq,duration=.085,type='square',volume=.026,offset=0){
+ if(!soundOn)return;
+ try{const AC=window.AudioContext||window.webkitAudioContext;if(!AC)return;if(!audio)audio=new AC();if(audio.state==='suspended')audio.resume().catch(()=>{});
+ const when=audio.currentTime+offset,osc=audio.createOscillator(),amp=audio.createGain();osc.type=type;osc.frequency.setValueAtTime(freq,when);amp.gain.setValueAtTime(.0001,when);amp.gain.exponentialRampToValueAtTime(volume,when+.009);amp.gain.exponentialRampToValueAtTime(.0001,when+duration);osc.connect(amp);amp.connect(audio.destination);osc.start(when);osc.stop(when+duration+.01);
+ }catch(err){}
+}
+function sfx(kind){
+ if(kind==='dot')sound(730,.045,'sine',.017);
+ if(kind==='hot'){sound(940,.08,'triangle',.04);sound(1280,.065,'sine',.025,.05)}
+ if(kind==='lane')sound(320,.075,'triangle',.034);
+ if(kind==='hit'){sound(165,.25,'sawtooth',.07);sound(100,.3,'triangle',.035,.16)}
+ if(kind==='clear')for(let i=0;i<5;i++)sound([440,554,659,880,1100][i],.18,'triangle',.045,i*.1);
+}
+function addScore(n){score+=n;if(score>best){best=score;try{localStorage.setItem('headon_mobile_best',String(best))}catch(e){}}
+ while(score>=nextLife){nextLife+=5000;lives=Math.min(6,lives+1);notice='1 UP!';noticeTime=1.3;sfx('clear')}
+ updateHUD()}
+function makeDots(){
+ dots=[];
+ for(let lane=0;lane<LANES;lane++){
+   const N=Math.round(track(lane).length/32);
+   for(let i=0;i<N;i++){
+     const u=norm((i+.48)/N);
+     const p=at(lane,u);
+     if(Math.abs(p.x-CX)<19&&(Math.abs(p.y-track(lane).t)<3||Math.abs(p.y-track(lane).b)<3))continue;
+     dots.push({lane,u,alive:true,hot:false});
+   }
+ }
+ pointsToNext=dots.length;
+}
+function placeCars(){
+ player={lane:2,renderLane:2,u:.14,speed:112,gateLock:-1,invuln:2.2};wantLane=2;
+ const count=Math.min(3,1+Math.floor((level-1)/2));
+ enemies=Array.from({length:count},(_,i)=>({lane:clamp([0,4,1][i],0,4),renderLane:clamp([0,4,1][i],0,4),u:norm(.62+i*.18),speed:84+Math.min(65,(level-1)*9)+i*9,gateLock:-1,seed:i,glint:Math.random()*10}));
+}
+function initStage(){makeDots();placeCars();boosting=false;cooldown=0;updateHUD()}
+function beginGame(){score=0;lives=3,nextLife=5000,level=1,clock=0,notice='',noticeTime=0;mode='running';initStage();sfx('clear');updateHUD()}
+function startToggle(){
+ if(mode==='intro'||mode==='over'){beginGame();return}
+ if(mode==='running'){mode='paused';boosting=false}
+ else if(mode==='paused')mode='running';updateHUD();
+}
+el('start').addEventListener('click',startToggle);
+el('sound').addEventListener('click',()=>{soundOn=!soundOn;el('sound').textContent=soundOn?'♪ ON':'♪ OFF';if(soundOn)sound(680,.09,'sine',.04)});
+function askLane(d){
+ if(mode!=='running')return;
+ wantLane=clamp(wantLane+d,0,4);
+ if(wantLane!==player.lane){notice='切れ目で車線変更';noticeTime=.6;sound(330,.04,'triangle',.025)}
+ updateHUD();
+}
+el('inner').addEventListener('click',()=>askLane(1));
+el('outer').addEventListener('click',()=>askLane(-1));
+const boostButton=el('boost');
+function boostOn(v){boosting=!!v&&mode==='running';boostButton.classList.toggle('active',boosting)}
+boostButton.addEventListener('pointerdown',e=>{e.preventDefault();boostButton.setPointerCapture(e.pointerId);boostOn(true)});
+for(const ev of ['pointerup','pointercancel','lostpointercapture'])boostButton.addEventListener(ev,()=>boostOn(false));
+window.addEventListener('blur',()=>boostOn(false));
+window.addEventListener('keydown',e=>{
+ if(['ArrowLeft','ArrowRight','ArrowUp','ArrowDown',' ','Enter'].includes(e.key))e.preventDefault();
+ if(e.repeat&&e.key!==' ')return;
+ if(e.key==='ArrowLeft'||e.key==='ArrowUp'||e.key==='a')askLane(1);
+ if(e.key==='ArrowRight'||e.key==='ArrowDown'||e.key==='d')askLane(-1);
+ if(e.code==='Space')boostOn(true);
+ if((e.key==='Enter'||e.key.toLowerCase()==='p')&&!e.repeat)startToggle();
+});
+window.addEventListener('keyup',e=>{if(e.code==='Space')boostOn(false)});
+document.addEventListener('visibilitychange',()=>{if(document.hidden){boostOn(false);if(mode==='running'){mode='paused';updateHUD()}}});
+// Swiping sideways on the screen is an alternative to pressing the big buttons.
+let swipe=null;
+cv.addEventListener('pointerdown',e=>{e.preventDefault();if(mode!=='running'){startToggle();return}swipe={x:e.clientX,y:e.clientY};cv.setPointerCapture(e.pointerId)});
+cv.addEventListener('pointerup',e=>{if(!swipe)return;const dx=e.clientX-swipe.x,dy=e.clientY-swipe.y;
+ if(Math.abs(dx)+Math.abs(dy)>20){if(Math.abs(dx)>=Math.abs(dy))askLane(dx<0?1:-1);else askLane(dy<0?1:-1)}swipe=null});
+cv.addEventListener('pointercancel',()=>swipe=null);
+function carXY(car){return at(car.renderLane,car.u)}
+function updateCar(car,dt,isPlayer){
+ if(isPlayer){
+   const target=boosting?216:112,rate=boosting?3:10;
+   car.speed+=(target-car.speed)*Math.min(1,dt*rate);
+   car.invuln=Math.max(0,car.invuln-dt);
+ }else{
+   car.speed=84+Math.min(65,(level-1)*9)+car.seed*9;
+ }
+ car.u=norm(car.u+(isPlayer?1:-1)*car.speed*dt/track(car.lane).length);
+ const gate=getGate(car.lane,car.u);
+ if(gate<0)car.gateLock=-1;
+ else if(car.gateLock!==gate){
+   car.gateLock=gate;
+   if(isPlayer){
+     let diff=wantLane-car.lane;
+     const maxStep=boosting?1:2;
+     const step=clamp(diff,-maxStep,maxStep);
+     if(step){changeLane(car,car.lane+step,gate);sfx('lane')}
+   }else{
+     const chance=.22+Math.min(.14,level*.018);
+     if(Math.random()<chance){
+       const toward=(player.lane>car.lane?1:-1),dir=(Math.random()<.33?toward:(Math.random()<.5?1:-1));
+       changeLane(car,clamp(car.lane+dir,0,4),gate);
+     }
+   }
+ }
+ const ease=Math.min(1,dt*10);car.renderLane+=(car.lane-car.renderLane)*ease;
+}
+function loseLife(){
+ if(mode!=='running')return;
+ lives--;boostOn(false);sfx('hit');notice='CRASH!';noticeTime=1;
+ if(lives<=0){mode='over';updateHUD();return}
+ mode='crash';cooldown=1.05;updateHUD();
+}
+function update(dt){
+ clock+=dt;noticeTime=Math.max(0,noticeTime-dt);
+ if(mode==='crash'){cooldown-=dt;if(cooldown<=0){placeCars();mode='running';updateHUD()}return}
+ if(mode==='clear'){cooldown-=dt;if(cooldown<=0){level++;mode='running';initStage()}return}
+ if(mode!=='running')return;
+ updateCar(player,dt,true);
+ for(const enemy of enemies)updateCar(enemy,dt,false);
+ const car=carXY(player);
+ for(const dot of dots){
+   if(!dot.alive)continue;
+   if(dot.lane===player.lane&&Math.abs(player.renderLane-player.lane)<.27){
+     const p=at(dot.lane,dot.u);
+     if(Math.hypot(car.x-p.x,car.y-p.y)<13+player.speed*dt){
+       dot.alive=false;pointsToNext--;addScore(dot.hot?10:5);
+       if(dot.hot)sfx('hot');else sfx('dot');
+     }
+   }
+   if(!dot.hot){
+     const p=at(dot.lane,dot.u);
+     for(const enemy of enemies){
+       const ec=carXY(enemy);
+       if(Math.hypot(ec.x-p.x,ec.y-p.y)<10+enemy.speed*dt){dot.hot=true;break}
+     }
+   }
+ }
+ for(const enemy of enemies){
+   const p=carXY(enemy);
+   if(player.invuln<=0&&Math.hypot(car.x-p.x,car.y-p.y)<17){loseLife();return}
+ }
+ if(pointsToNext<=0){mode='clear';cooldown=1.8;addScore(300+level*100);notice='STAGE CLEAR!';noticeTime=1.8;sfx('clear')}
+ else updateHUD();
+}
+function background(){
+ const g=ctx.createLinearGradient(0,0,0,CH);g.addColorStop(0,'#101c60');g.addColorStop(.65,'#07134d');g.addColorStop(1,'#06113c');ctx.fillStyle=g;ctx.fillRect(0,0,CW,CH);
+ // A faint CRT phosphor pattern; no screen shake or flashing on failure.
+ ctx.fillStyle='#ffffff05';for(let y=0;y<CH;y+=4)ctx.fillRect(0,y,CW,1);
+ ctx.strokeStyle='#3c68c439';ctx.lineWidth=1;ctx.strokeRect(8.5,8.5,CW-17,CH-17);
+}
+function boundary(k){
+ ctx.strokeStyle=k===0?'#84acff':'#7eaff5';ctx.lineWidth=k===0?2.1:2;
+ ctx.shadowColor='#2c6dfc';ctx.shadowBlur=6;
+ let drawing=false;const total=280;
+ ctx.beginPath();
+ for(let i=0;i<=total;i++){
+   const q=rectangleBorderPoint(k,i/total), top=EDGE+k*INSET,bot=CH-EDGE-k*INSET;
+   const gap=Math.abs(q.x-CX)<31&&(Math.abs(q.y-top)<1.7||Math.abs(q.y-bot)<1.7);
+   if(gap){drawing=false;continue}
+   if(!drawing){ctx.moveTo(q.x,q.y);drawing=true}else ctx.lineTo(q.x,q.y);
+ }
+ ctx.stroke();ctx.shadowBlur=0;
+}
+function drawRoad(){
+ for(let i=0;i<=5;i++)boundary(i);
+ // Subtle arrows at the only two legal crossing points.
+ for(const y of [37,CH-37]){
+   ctx.strokeStyle='#65f3d056';ctx.lineWidth=1.4;
+   ctx.beginPath();ctx.moveTo(CX-15,y);ctx.lineTo(CX+15,y);ctx.moveTo(CX-6,y-4);ctx.lineTo(CX-13,y);ctx.lineTo(CX-6,y+4);ctx.moveTo(CX+6,y-4);ctx.lineTo(CX+13,y);ctx.lineTo(CX+6,y+4);ctx.stroke();
+ }
+}
+function drawDots(){
+ for(const d of dots){if(!d.alive)continue;const p=at(d.lane,d.u);
+   ctx.fillStyle=d.hot?'#f27987':'#d5e9ff';ctx.globalAlpha=d.hot?.94:.8;
+   ctx.fillRect(Math.round(p.x)-2,Math.round(p.y)-2,4,4);
+ }ctx.globalAlpha=1;
+}
+function drawVehicle(car,enemy=false){
+ if(!enemy&&car.invuln>0&&Math.sin(clock*12)>0.72)return;
+ const p=carXY(car),facing=p.a+(enemy?Math.PI:0);
+ ctx.save();ctx.translate(p.x,p.y);ctx.rotate(facing);
+ const primary=enemy?'#ff586d':'#ffedba',dark=enemy?'#9c2b57':'#c2a56b';
+ ctx.shadowColor=enemy?'#ff3f79':'#fff0aa';ctx.shadowBlur=enemy?9:7;
+ ctx.fillStyle=dark;ctx.fillRect(-10,-7,19,14);
+ ctx.fillStyle=primary;ctx.fillRect(-9,-5,18,10);ctx.fillRect(6,-4,6,8);
+ ctx.shadowBlur=0;
+ ctx.fillStyle=enemy?'#ffd4d9':'#639dd5';ctx.fillRect(-2,-4,5,8);
+ ctx.fillStyle='#131b35';ctx.fillRect(-6,-8,5,3);ctx.fillRect(-6,5,5,3);ctx.fillRect(4,-8,5,3);ctx.fillRect(4,5,5,3);
+ ctx.fillStyle=enemy?'#fff1f1':'#fffbe6';ctx.fillRect(11,-3,2,2);ctx.fillRect(11,1,2,2);
+ ctx.restore();
+}
+function centerDisplay(){
+ ctx.textAlign='center';ctx.textBaseline='middle';
+ ctx.fillStyle='#6b9bef38';ctx.font='900 19px Impact,system-ui,sans-serif';ctx.fillText('HEAD ON',CX,245);
+ ctx.font='800 9px system-ui,sans-serif';ctx.fillStyle='#7fafff';ctx.fillText('DOTS LEFT',CX,274);
+ ctx.font='900 23px ui-monospace,monospace';ctx.fillStyle='#d9e7b3';ctx.fillText(String(pointsToNext).padStart(3,'0'),CX,300);
+ ctx.font='700 8px system-ui,sans-serif';ctx.fillStyle='#a9bfdc';ctx.fillText('LANE  '+(player?player.lane+1:3)+' / 5',CX,326);
+ if(mode==='running'&&player&&wantLane!==player.lane){
+   ctx.fillStyle='#ffe5a2';ctx.font='800 9px system-ui,sans-serif';ctx.fillText('→ '+(wantLane+1)+' LANE',CX,345);
+ }
+ ctx.textBaseline='alphabetic';
+}
+function overlay(){
+ if(mode==='running')return;
+ ctx.fillStyle='#07112ed1';ctx.fillRect(0,0,CW,CH);
+ ctx.save();ctx.textAlign='center';
+ const y=278;
+ ctx.shadowColor='#73aaff';ctx.shadowBlur=20;ctx.fillStyle='#f2f5ff';ctx.font='italic 900 46px Impact,system-ui,sans-serif';
+ const title=mode==='intro'?'HEAD ON':mode==='over'?'GAME OVER':mode==='paused'?'PAUSED':mode==='clear'?'STAGE CLEAR!':'CRASH!';
+ ctx.fillText(title,CX,y-45);ctx.shadowBlur=0;
+ ctx.fillStyle='#f0dfae';ctx.font='800 15px system-ui,sans-serif';
+ if(mode==='intro'){
+   ctx.fillText('すべてのドットを集めよう',CX,y-2);ctx.fillText('赤い逆走車をよけて走れ！',CX,y+23);
+   ctx.fillStyle='#c9e4ff';ctx.font='800 12px system-ui,sans-serif';ctx.fillText('「スタート」または画面をタップ',CX,y+71);
+ }else if(mode==='over'){
+   ctx.fillText('SCORE  '+String(score).padStart(5,'0'),CX,y+3);
+   ctx.fillStyle='#c7ddf8';ctx.font='800 13px system-ui,sans-serif';ctx.fillText('「もう一度」で再挑戦',CX,y+58);
+ }else if(mode==='paused'){
+   ctx.fillText('一時停止中',CX,y+6);ctx.fillText('画面をタップして再開',CX,y+60);
+ }else if(mode==='clear'){
+   ctx.fillText('BONUS +'+(300+level*100),CX,y+10);ctx.fillText('次のステージへ！',CX,y+54);
+ }else{ctx.fillText('敵車と正面衝突！',CX,y+5);ctx.fillText('再スタートします',CX,y+47)}
+ ctx.restore();
+}
+function draw(){
+ background();drawRoad();drawDots();
+ centerDisplay();
+ if(player)drawVehicle(player);
+ for(const e of enemies)drawVehicle(e,true);
+ if(mode==='running'&&noticeTime>0&&notice){
+   ctx.textAlign='center';ctx.font='900 13px system-ui,sans-serif';ctx.fillStyle='#ffe8a5';ctx.fillText(notice,CX,407);
+ }
+ overlay();
+}
+function tick(t){
+ const dt=lastTime?clamp((t-lastTime)/1000,0,.035):0;lastTime=t;
+ update(dt);draw();requestAnimationFrame(tick);
+}
+// Allows automated browser smoke tests without affecting the gameplay UI.
+if(new URLSearchParams(location.search).has('test')){
+ window.__headonTest={state:()=>({mode,level,score,lives,pointsToNext,wantLane,player:player&&{...player},enemies:enemies.map(e=>({...e}))}),
+ forceClear:()=>{for(const d of dots)d.alive=false;pointsToNext=0},
+ setEnemySpeed:(v)=>{for(const e of enemies)e.speed=v},
+ setPlayerInvulnerable:(n)=>{if(player)player.invuln=n},
+ step:(n=1)=>{for(let i=0;i<n;i++)update(1/60);draw()},
+ setEnemyLanes:(ls)=>{enemies.forEach((e,i)=>{e.lane=ls[i]??e.lane;e.renderLane=e.lane})}};
+}
+updateHUD();requestAnimationFrame(tick);
+})();
+</script>
+</body>
+</html>
