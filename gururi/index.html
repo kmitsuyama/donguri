@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
 <meta name="theme-color" content="#101c2b">
-<title>GURURI v1.1｜ぐるり・囲んで陣取り！</title>
+<title>GURURI v1.2｜ぐるり・囲んで陣取り！</title>
 <style>
 :root{color-scheme:dark;--bg:#091828;--panel:#16283c;--ink:#eff9ff;--muted:#b3c5d2;--blue:#77edff;--red:#ffba83;--gold:#ffe1a1}
 *{box-sizing:border-box}html{background:var(--bg);overscroll-behavior:none}body{margin:0;min-height:100dvh;color:var(--ink);font-family:system-ui,-apple-system,'Hiragino Kaku Gothic ProN','Yu Gothic',sans-serif;background:radial-gradient(ellipse at 50% -13%,#344966 0%,#132940 37%,#081626 100%);-webkit-tap-highlight-color:transparent}button{font:inherit;cursor:pointer;touch-action:manipulation}button:disabled{opacity:.48;cursor:default}[hidden]{display:none!important}
@@ -152,7 +152,7 @@ canvas.addEventListener('pointercancel',()=>{gesture=null;setHover(-1)});canvas.
 function rr(x,y,w0,h0,r,col){ctx.fillStyle=col;ctx.beginPath();ctx.roundRect(x,y,w0,h0,r);ctx.fill()}
 function fenceGeom(id){if(id<HCOUNT){const y=(id/N)|0,x=id%N;return [MARGIN+x*T,MARGIN+y*T,MARGIN+(x+1)*T,MARGIN+y*T]}
 const k=id-HCOUNT,y=(k/(N+1))|0,x=k%(N+1);return[MARGIN+x*T,MARGIN+y*T,MARGIN+x*T,MARGIN+(y+1)*T]}
-function drawFence(id,color,width,glow=0){const [x1,y1,x2,y2]=fenceGeom(id);ctx.save();ctx.lineCap='round';if(glow){ctx.shadowColor=color;ctx.shadowBlur=glow}ctx.strokeStyle=color;ctx.lineWidth=width;ctx.beginPath();ctx.moveTo(x1,y1);ctx.lineTo(x2,y2);ctx.stroke();ctx.restore()}
+function drawFence(id,color,width,glow=0){const [x1,y1,x2,y2]=fenceGeom(id);ctx.save();ctx.lineCap='round';ctx.lineJoin='round';ctx.strokeStyle='#182330';ctx.lineWidth=width+4.2;ctx.beginPath();ctx.moveTo(x1,y1);ctx.lineTo(x2,y2);ctx.stroke();if(glow){ctx.shadowColor=color;ctx.shadowBlur=glow}ctx.strokeStyle=color;ctx.lineWidth=width;ctx.beginPath();ctx.moveTo(x1,y1);ctx.lineTo(x2,y2);ctx.stroke();ctx.strokeStyle='rgba(255,255,255,.28)';ctx.lineWidth=Math.max(2,width*.25);ctx.beginPath();ctx.moveTo(x1,y1);ctx.lineTo(x2,y2);ctx.stroke();ctx.restore()}
 function draw(){ctx.clearRect(0,0,CANVAS,CANVAS);const back=ctx.createLinearGradient(0,0,0,CANVAS);back.addColorStop(0,'#173d4b');back.addColorStop(1,'#0f2a3d');ctx.fillStyle=back;ctx.fillRect(0,0,CANVAS,CANVAS);
 rr(MARGIN-19,MARGIN-19,N*T+38,N*T+38,17,'#223b4d');rr(MARGIN-7,MARGIN-7,N*T+14,N*T+14,8,'#082439');
 const isFlash=flash&&performance.now()-flashStart<900;for(let y=0;y<N;y++)for(let x=0;x<N;x++){
@@ -166,7 +166,7 @@ const isFlash=flash&&performance.now()-flashStart<900;for(let y=0;y<N;y++)for(le
 // Available fences: distinct lilac dashed strokes outlined in deep purple.
 // Dark outer dash remains visible on beige cells; bright inner dash also stands out on claimed cells.
 ctx.save();ctx.lineCap='butt';ctx.setLineDash([12,9]);for(let i=0;i<EDGE_COUNT;i++)if(!edges[i]){const [x1,y1,x2,y2]=fenceGeom(i);ctx.beginPath();ctx.moveTo(x1,y1);ctx.lineTo(x2,y2);ctx.strokeStyle='#51205e';ctx.lineWidth=7.5;ctx.stroke();ctx.strokeStyle='#e8a3f5';ctx.lineWidth=4;ctx.stroke()}ctx.restore();
-for(let i=0;i<EDGE_COUNT;i++)if(edges[i])drawFence(i,edges[i]===3?'#647b8c':edges[i]===1?'#53d8fa':'#ffa66c',edges[i]===3?7.3:9,edges[i]===3?0:5);
+for(let i=0;i<EDGE_COUNT;i++)if(edges[i])drawFence(i,edges[i]===3?'#8fa5b0':edges[i]===1?'#41dcff':'#ff9650',edges[i]===3?9:11,edges[i]===3?0:7);
 // Hints show immediate capture opportunities; squares remain unmarked when there is no one-move closure.
 if(showHint&&humanTurn())for(let i=0;i<EDGE_COUNT;i++)if(!edges[i]&&gainIf(i)>0)drawFence(i,'#ffdf8e',7.5,9);
 if(hover>=0&&humanTurn()){drawFence(hover,'#fff3ac',10,14);if(previewGain>0){const [a,b,c,d]=fenceGeom(hover);const mx=(a+c)/2,my=(b+d)/2;rr(Math.min(CANVAS-96,Math.max(15,mx-43)),Math.max(9,my-52),86,29,9,'#102d3aef');ctx.font='1000 18px system-ui';ctx.fillStyle='#ffe6a5';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText('+'+previewGain+' マス',Math.min(CANVAS-53,Math.max(58,mx)),Math.max(23,my-37))}}
