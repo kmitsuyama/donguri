@@ -1,0 +1,187 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<meta name="theme-color" content="#101c2b">
+<title>GURURI v1.0｜ぐるり・囲んで陣取り！</title>
+<style>
+:root{color-scheme:dark;--bg:#091828;--panel:#16283c;--ink:#eff9ff;--muted:#b3c5d2;--blue:#77edff;--red:#ffba83;--gold:#ffe1a1}
+*{box-sizing:border-box}html{background:var(--bg);overscroll-behavior:none}body{margin:0;min-height:100dvh;color:var(--ink);font-family:system-ui,-apple-system,'Hiragino Kaku Gothic ProN','Yu Gothic',sans-serif;background:radial-gradient(ellipse at 50% -13%,#344966 0%,#132940 37%,#081626 100%);-webkit-tap-highlight-color:transparent}button{font:inherit;cursor:pointer;touch-action:manipulation}button:disabled{opacity:.48;cursor:default}[hidden]{display:none!important}
+.app{width:min(100%,510px);margin:auto;padding:10px 12px max(15px,env(safe-area-inset-bottom))}
+header{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:1px 1px 11px}.brand{display:flex;align-items:center;gap:9px}.badge-logo{width:38px;height:38px;display:grid;place-items:center;border-radius:12px;background:linear-gradient(135deg,#7ce9ff 0 34%,#233b51 34% 65%,#ffb17b 65%);border:2px solid #d4eadf;color:#152b3e;box-shadow:0 3px 12px #0008;font-size:24px;font-weight:1000}.brand h1{margin:0;letter-spacing:.08em;font-size:clamp(26px,7.6vw,36px);line-height:1;font-weight:1000;text-shadow:0 3px #172b3b}.brand h1 span{color:#ffe1a1}.brand small{display:block;margin-top:5px;font-size:10px;font-weight:900;letter-spacing:.11em;color:#bfd2d9}.mini-tag{font-size:10px;padding:6px 8px;border-radius:18px;border:1px solid #6e8494;color:#ecf5f4;white-space:nowrap;font-weight:900}
+.top-settings{display:flex;gap:8px;align-items:center;margin-bottom:9px}.mode{display:flex;flex:1;gap:3px;padding:3px;background:#101e32;border-radius:11px;border:1px solid #50697e}.mode button{flex:1;min-height:34px;padding:6px 4px;border:0;border-radius:8px;background:transparent;color:#aec2d0;font-size:12px;font-weight:950}.mode button.active{background:#395c75;color:white;box-shadow:0 2px 5px #0006}.map-button{background:#18344a;border:1px solid #7e96a6;border-radius:10px;padding:6px 10px;min-height:41px;color:#e9f6fc;font-size:12px;font-weight:950;white-space:nowrap}
+.scoreboard{display:grid;grid-template-columns:1fr 86px 1fr;gap:7px;margin-bottom:9px}.score{border-radius:12px;background:linear-gradient(140deg,#173b55,#142439);border:1px solid #497c92;padding:7px 10px;min-width:0}.score.red{background:linear-gradient(230deg,#53392e,#23283b);border-color:#9d745b}.score.active{box-shadow:0 0 0 1px #94eeff,0 0 15px #77e9ff22}.score.red.active{box-shadow:0 0 0 1px #ffd1a2,0 0 15px #ffb57a22}.score-line{display:flex;justify-content:space-between;gap:4px;font-size:10px;color:#c2d8e4;font-weight:900}.score .team{color:var(--blue)}.score.red .team{color:var(--red)}.score strong{display:inline-block;margin-top:1px;font-size:clamp(25px,7vw,33px);color:#b2f7ff;font-variant-numeric:tabular-nums;line-height:1.2}.score.red strong{color:#ffe1bf}.score small{font-size:10px;font-weight:800;color:#c0d0dc}.timer{display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;border-radius:11px;background:#102238;border:1px solid #4f7183}.timer strong{font-size:21px;font-weight:1000;color:var(--gold);line-height:1.2}.timer span{font-size:9px;font-weight:900;color:#bbcfdb;line-height:1.5}
+.board-shell{position:relative;width:min(100%,470px,calc(100dvh - 275px));min-width:min(100%,230px);aspect-ratio:1;margin:0 auto;padding:6px;border-radius:16px;background:linear-gradient(130deg,#8a9ca9,#53697c 42%,#97a5a9);box-shadow:0 14px 33px #0009,0 0 0 2px #162f44;overflow:hidden}canvas{display:block;width:100%;height:100%;border-radius:9px;background:#10283a;touch-action:none;user-select:none;-webkit-user-select:none;cursor:crosshair}.canvas-label{position:absolute;left:14px;bottom:10px;font-size:8px;color:#a9c1cba9;letter-spacing:.12em;font-weight:900;pointer-events:none}
+.turn-msg{height:30px;display:flex;align-items:center;justify-content:center;gap:8px;font-size:13px;font-weight:950;color:#9cf1ff;text-align:center}.turn-msg.red{color:#ffc69c}.turn-msg.end{color:var(--gold)}.turn-dot{height:8px;width:8px;border-radius:50%;background:currentColor;box-shadow:0 0 9px currentColor}.actions{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}.act{min-height:48px;border:1px solid #8aabb8;border-radius:12px;background:linear-gradient(#38566f,#1c384f);color:#eef7f6;font-weight:950;font-size:12px;box-shadow:0 3px #0b1e2d}.act:active:not(:disabled){transform:translateY(2px);box-shadow:0 1px #0b1e2d}.act.hint.active{background:linear-gradient(#ffe5a1,#dfb46d);color:#2b333a}.controls-bottom{display:flex;justify-content:center;gap:7px;margin-top:10px}.sub{border:1px solid #596f84;background:#1a2f45;color:#dcebf5;border-radius:9px;min-height:33px;padding:6px 12px;font-size:11px;font-weight:900}.instructions{text-align:center;font-size:11px;line-height:1.65;color:#bfd1db;margin:10px 0 0}.instructions b{color:#ffe5a4}.record{text-align:center;font-size:10px;color:#99bac7;margin-top:6px;font-weight:800;min-height:15px}
+.modal{position:fixed;inset:0;z-index:20;background:#06111ee5;display:grid;place-items:center;padding:16px}.dialog{width:min(100%,445px);max-height:92dvh;overflow-y:auto;background:linear-gradient(150deg,#234057,#11243a);border:2px solid #7d9aab;border-radius:18px;padding:18px;box-shadow:0 16px 55px #000b}.dialog-top{display:flex;align-items:center;justify-content:space-between;gap:7px}.dialog h2{margin:0;font-size:21px;color:#ffe5ae}.close{min-width:37px;min-height:37px;border-radius:9px;border:1px solid #809aac;background:#32536a;color:#fff;font-size:20px}.dialog p{font-size:12px;line-height:1.75;color:#d3e5ec;margin:11px 0}.map-list{display:grid;gap:8px;margin:14px 0}.map-option{border:1px solid #6b91a3;background:#1e3b50;border-radius:12px;min-height:58px;padding:10px 13px;color:#ecf5f6;text-align:left;display:flex;align-items:center;gap:12px}.map-option.active{border:2px solid #ffe4b0;background:#364c5f}.map-option .n{font-size:22px;color:#ffdd99;font-weight:1000}.map-option strong{font-size:14px}.map-option small{display:block;font-size:10px;color:#bdd1d8;margin-top:3px}.dialog label{font-size:12px;color:#dceef4;font-weight:900}.dialog select{font:inherit;font-size:13px;background:#1c3a51;color:#e9f7fc;border:1px solid #88a6b4;border-radius:10px;padding:9px;width:100%;min-height:41px;margin:6px 0 12px}.primary{display:block;width:100%;min-height:45px;background:#ffe0a2;border:0;border-radius:11px;color:#273548;font-weight:1000;font-size:14px;margin-top:8px}.explain{display:flex;gap:10px;align-items:flex-start;margin:12px 0;color:#e2edf5;font-size:13px;line-height:1.6}.explain .number{background:#ffdf9e;color:#263447;border-radius:50%;min-width:23px;height:23px;display:grid;place-items:center;font-size:12px;font-weight:1000}.legend{display:flex;flex-wrap:wrap;gap:7px;justify-content:center;margin:11px 0}.legend span{border:1px solid #6b859a;padding:6px 9px;border-radius:8px;font-size:11px}.win-cover{position:absolute;inset:6px;display:grid;place-items:center;background:#061626d7;z-index:4;border-radius:9px;padding:13px}.win-panel{background:linear-gradient(135deg,#304d60,#182b43);border:2px solid #ecd29a;border-radius:17px;width:100%;max-width:300px;text-align:center;padding:20px 13px;box-shadow:0 16px 33px #000a}.win-panel .trophy{font-size:35px}.win-panel h2{font-size:22px;margin:7px 0 6px;color:#ffe0a4}.win-panel p{font-size:13px;line-height:1.7;color:#f1f5fa;margin:8px 0 13px;white-space:pre-line;font-weight:800}.win-panel .small{background:#294963;color:#e8f7fc;border:1px solid #8bacb9;border-radius:10px;min-height:39px;width:100%;margin-top:8px;font-weight:900}
+@media(max-height:760px){.app{padding-top:6px}header{margin-bottom:6px}.top-settings{margin-bottom:6px}.scoreboard{margin-bottom:6px}.board-shell{width:min(100%,470px,calc(100dvh - 247px))}.turn-msg{height:25px}.act{min-height:43px}.controls-bottom{margin-top:7px}.instructions{margin-top:7px}}
+@media(max-height:650px){.board-shell{width:min(100%,470px,calc(100dvh - 218px))}.brand h1{font-size:25px}.brand small{font-size:9px}.mini-tag{display:none}.score{padding:5px 7px}.turn-msg{height:24px}.act{min-height:37px}.instructions{display:none}.controls-bottom{margin-top:5px}.record{display:none}}
+@media(max-width:350px){.app{padding-left:8px;padding-right:8px}.scoreboard{grid-template-columns:1fr 70px 1fr;gap:5px}.score{padding:5px 6px}.score-line{font-size:9px}.mini-tag{display:none}.actions{gap:5px}.act{font-size:11px}.board-shell{min-width:min(100%,214px)}}
+@media(min-width:720px){.app{padding-top:20px}}
+</style>
+</head>
+<body>
+<main class="app">
+ <header><div class="brand"><div class="badge-logo">□</div><div><h1>GURU<span>RI</span></h1><small>ぐるり · 囲んで陣取り！</small></div></div><span class="mini-tag">FENCE × TERRITORY</span></header>
+ <div class="top-settings"><div class="mode" aria-label="プレイモード"><button id="modeCpu" class="active" type="button">1P · CPU対戦</button><button id="modeTwo" type="button">2P · ふたり対戦</button></div><button id="mapButton" class="map-button" type="button">▦ MAP 1 ▾</button></div>
+ <div class="scoreboard"><div id="bluePanel" class="score blue active"><div class="score-line"><span class="team">● BLUE</span><span id="blueTitle">あなた</span></div><strong id="blueScore">0</strong><small> マス</small></div><div class="timer"><strong id="turnCount">0/48</strong><span>ターン</span></div><div id="orangePanel" class="score red"><div class="score-line"><span class="team">● ORANGE</span><span id="orangeTitle">CPU</span></div><strong id="orangeScore">0</strong><small> マス</small></div></div>
+ <div class="board-shell"><canvas id="board" width="720" height="720" aria-label="フェンスの点線をタップして陣地を囲む9×9の盤面"></canvas><span class="canvas-label">GURURI · FENCE FIELD</span><div id="winCover" class="win-cover" hidden><div class="win-panel"><div class="trophy" id="winEmoji">🏆</div><h2 id="winTitle">BLUE WIN!</h2><p id="winText"></p><button id="again" class="primary" type="button">もう一度遊ぶ</button><button id="changeMapWin" class="small" type="button">別のマップで遊ぶ</button></div></div></div>
+ <div id="turnMsg" class="turn-msg"><span class="turn-dot"></span><span id="turnText">点線をタップしてフェンスを置こう！</span></div>
+ <div class="actions"><button id="undo" class="act" type="button">↶ 1手戻す</button><button id="hint" class="act hint" type="button">✦ ヒント</button><button id="restart" class="act" type="button">↻ やり直す</button></div>
+ <div class="controls-bottom"><button id="help" class="sub" type="button">？ 遊び方</button><button id="sound" class="sub" type="button">♪ 音 ON</button></div>
+ <p class="instructions"><b>点線をタップして線を1本。</b>ぐるりと囲んだマスを全部獲得！<br>相手が置いた線も利用できます。<b>最大48手で決着！</b></p><div id="record" class="record"></div>
+</main>
+<div id="mapModal" class="modal" hidden role="dialog" aria-modal="true" aria-labelledby="mapTitle"><div class="dialog"><div class="dialog-top"><h2 id="mapTitle">マップを選ぶ</h2><button id="closeMap" class="close" type="button" aria-label="閉じる">×</button></div><p>マップごとに、最初から置かれた灰色のフェンスの配置が異なります。</p><div id="mapOptions" class="map-list"></div><label for="difficulty" id="difficultyLabel">CPUの強さ</label><select id="difficulty"><option value="easy">やさしい</option><option value="normal">ふつう</option><option value="hard">つよい</option></select><button id="applyMap" class="primary" type="button">この設定で遊ぶ</button></div></div>
+<div id="helpModal" class="modal" hidden role="dialog" aria-modal="true" aria-labelledby="helpTitle"><div class="dialog"><div class="dialog-top"><h2 id="helpTitle">GURURI の遊び方</h2><button id="closeHelp" class="close" type="button">×</button></div><div class="explain"><span class="number">1</span><span>青とオレンジで交互に、盤面の<b>点線を1本タップ</b>してフェンスを置きます。</span></div><div class="explain"><span class="number">2</span><span><b>フェンスで完全に囲まれたマス</b>が、最後の線を置いた人の陣地になります。1マスでも広い領域でもOK！</span></div><div class="explain"><span class="number">3</span><span>灰色の線は最初からある共通のフェンスです。<b>相手が置いた線も囲むために使えます。</b></span></div><div class="explain"><span class="number">4</span><span>一度獲得した陣地は奪われません。<b>最大48手（各24手）終了時に陣地が多い方が勝利</b>。全マスが埋まった場合はその時点で終了。同点なら引き分けです。</span></div><div class="legend"><span>■ 青＝あなた/1P</span><span>■ 橙＝CPU/2P</span><span>▬ 灰＝共通線</span></div><p>「ヒント」を押すと、今すぐ陣地を獲得できる場所が光ります。「1手戻す」はCPU対戦では相手の手もまとめて戻します。</p><button id="closeHelpBottom" class="primary" type="button">ゲームに戻る</button></div></div>
+<script>
+(()=>{'use strict';
+const $=id=>document.getElementById(id),canvas=$('board'),ctx=canvas.getContext('2d');
+const N=9,HCOUNT=N*(N+1),EDGE_COUNT=2*HCOUNT,CELL_COUNT=N*N,CANVAS=720,MARGIN=45,T=70,MAX_TURNS=48;
+const BLUE='#76e9ff',ORANGE='#ffb687';
+const h=(x,y)=>y*N+x,v=(x,y)=>HCOUNT+y*(N+1)+x;
+const MAPS=[
+ {name:'花園',detail:'小さな区画をつなぐ王道マップ',seed:1395,kind:0},
+ {name:'回廊',detail:'長い壁と通り抜ける線が交差',seed:9741,kind:1},
+ {name:'迷い路',detail:'変則的な囲いが連続する上級マップ',seed:7319,kind:2}
+];
+let mode='cpu',mapIndex=0,pendingMap=0,difficulty='normal',sound=true,edges=new Uint8Array(EDGE_COUNT),owner=new Uint8Array(CELL_COUNT),turn=0,ended=false,cpuThinking=false,history=[],hover=-1,showHint=false,previewGain=0,flash=null,flashStart=0,record={},timer=null,audio=null,dialogOpen=false;
+try{const obj=JSON.parse(localStorage.getItem('gururi_settings_v1')||'{}');if(['cpu','two'].includes(obj.mode))mode=obj.mode;if([0,1,2].includes(obj.mapIndex))mapIndex=obj.mapIndex;if(['easy','normal','hard'].includes(obj.difficulty))difficulty=obj.difficulty;if(typeof obj.sound==='boolean')sound=obj.sound;record=JSON.parse(localStorage.getItem('gururi_record_v1')||'{}')}catch(e){}
+function save(){try{localStorage.setItem('gururi_settings_v1',JSON.stringify({mode,mapIndex,difficulty,sound}));localStorage.setItem('gururi_record_v1',JSON.stringify(record))}catch(e){}}
+function rand(seed){let x=seed>>>0;return ()=>{x=(x+0x6D2B79F5)|0;let t=Math.imul(x^(x>>>15),1|x);t^=t+Math.imul(t^(t>>>7),61|t);return((t^(t>>>14))>>>0)/4294967296}}
+function rectangleEdges(x,y,w0,h0){const res=[];for(let i=x;i<x+w0;i++){res.push(h(i,y),h(i,y+h0))}for(let j=y;j<y+h0;j++){res.push(v(x,j),v(x+w0,j))}return res}
+function rooms(kind){if(kind===0){const a=[];for(let y=0;y<9;y+=3)for(let x=0;x<9;x+=3)a.push([x,y,3,3]);return a}
+if(kind===1)return [[0,0,3,4],[3,0,3,2],[6,0,3,3],[3,2,3,2],[0,4,3,3],[3,4,4,3],[7,3,2,4],[0,7,3,2],[3,7,3,2],[6,7,3,2]];
+return [[0,0,4,3],[4,0,5,3],[0,3,3,3],[3,3,3,3],[6,3,3,3],[0,6,4,3],[4,6,5,3],[1,1,3,3],[5,4,3,3]]}
+// Outside flood: any unsealed boundary edge lets the outside world reach the adjacent cell.
+function reachable(e){const seen=new Uint8Array(CELL_COUNT),q=new Int16Array(CELL_COUNT);let q0=0,q1=0;
+function add(x,y){const k=y*N+x;if(!seen[k]){seen[k]=1;q[q1++]=k}}
+for(let x=0;x<N;x++){if(!e[h(x,0)])add(x,0);if(!e[h(x,N)])add(x,N-1)}
+for(let y=0;y<N;y++){if(!e[v(0,y)])add(0,y);if(!e[v(N,y)])add(N-1,y)}
+while(q0<q1){const p=q[q0++],x=p%N,y=(p/N)|0;
+ if(y>0&&!e[h(x,y)])add(x,y-1);if(y<N-1&&!e[h(x,y+1)])add(x,y+1);
+ if(x>0&&!e[v(x,y)])add(x-1,y);if(x<N-1&&!e[v(x+1,y)])add(x+1,y);
+}return seen}
+function getClaims(e,own){const r=reachable(e),claims=[];for(let k=0;k<CELL_COUNT;k++)if(!r[k]&&!own[k])claims.push(k);return claims}
+// Preset walls are deliberately left incomplete; no cell can be pre-owned or enclosed at the start.
+function createPreset(i){const m=MAPS[i],rng=rand(m.seed),pool=new Set();
+for(const [x,y,w0,h0] of rooms(m.kind)){
+ const rim=rectangleEdges(x,y,w0,h0);for(const id of rim)if(rng()<(m.kind===0?.83:.78))pool.add(id);
+}
+const extra=m.kind===0?24:m.kind===1?29:33;
+for(let t=0;t<extra;t++){
+ const x=(rng()*N)|0,y=(rng()*N)|0,type=rng()<.5;
+ const id=type?h(x,y+(rng()<.5?0:1)):v(x+(rng()<.5?0:1),y);pool.add(id);
+}
+const order=[...pool];for(let t=order.length-1;t>0;t--){const j=(rng()*(t+1))|0;[order[t],order[j]]=[order[j],order[t]]}
+const ee=new Uint8Array(EDGE_COUNT);
+for(const id of order){ee[id]=3;if(getClaims(ee,new Uint8Array(CELL_COUNT)).length)ee[id]=0}
+// Keep the opening balanced: a single initial move must not immediately seal a giant district.
+// Larger 15-25-cell captures remain possible when players add several fences.
+for(let round=0;round<90;round++){
+ let biggest=0,opening=-1,claimed=[];
+ for(let id=0;id<EDGE_COUNT;id++)if(!ee[id]){
+  ee[id]=1;const got=getClaims(ee,new Uint8Array(CELL_COUNT));ee[id]=0;
+  if(got.length>biggest){biggest=got.length;opening=id;claimed=got}
+ }
+ if(biggest<=6||opening<0)break;
+ const set=new Set(claimed),can=[];
+ for(let id=0;id<EDGE_COUNT;id++)if(ee[id]===3){
+  let a=-1,b=-1;
+  if(id<HCOUNT){const y=(id/N)|0,x=id%N;if(y>0)a=(y-1)*N+x;if(y<N)b=y*N+x}
+  else{const n=id-HCOUNT,y=(n/(N+1))|0,x=n%(N+1);if(x>0)a=y*N+x-1;if(x<N)b=y*N+x}
+  if(set.has(a)!==set.has(b))can.push(id)
+ }
+ if(!can.length)break;
+ ee[can[(rng()*can.length)|0]]=0;
+}
+return ee}
+function score(){let b=0,r=0;for(const x of owner){if(x===1)b++;else if(x===2)r++}return [b,r]}
+function gainIf(id,e=edges,own=owner){if(id<0||e[id])return 0;e[id]=1;const n=getClaims(e,own).length;e[id]=0;return n}
+function legalIds(e=edges){const arr=[];for(let i=0;i<EDGE_COUNT;i++)if(!e[i])arr.push(i);return arr}
+function soundNote(freq,dur=.065,gain=.024){if(!sound)return;try{const A=window.AudioContext||window.webkitAudioContext;if(!A)return;if(!audio)audio=new A();if(audio.state==='suspended')audio.resume().catch(()=>{});const osc=audio.createOscillator(),amp=audio.createGain(),t=audio.currentTime;osc.type='triangle';osc.frequency.setValueAtTime(freq,t);amp.gain.setValueAtTime(gain,t);amp.gain.exponentialRampToValueAtTime(.0001,t+dur);osc.connect(amp);amp.connect(audio.destination);osc.start(t);osc.stop(t+dur+.005)}catch(e){}}
+function fresh(){clearTimeout(timer);timer=null;edges=createPreset(mapIndex);owner=new Uint8Array(CELL_COUNT);turn=0;history=[];ended=false;cpuThinking=false;hover=-1;showHint=false;previewGain=0;flash=null;$('winCover').hidden=true;closeMap();update();draw();save()}
+function side(){return turn%2}function humanTurn(){return !ended&&!dialogOpen&&!cpuThinking&&(mode==='two'||side()===0)}
+function snapshot(){return {edges:edges.slice(),owner:owner.slice(),turn}}
+function applyMove(id,fromCpu=false){if(id<0||id>=EDGE_COUNT||edges[id]||ended||turn>=MAX_TURNS)return false;
+ if(!fromCpu&&!humanTurn())return false;
+ const who=side()+1;history.push(snapshot());edges[id]=who;const claims=getClaims(edges,owner);for(const k of claims)owner[k]=who;turn++;flash=claims;flashStart=performance.now();hover=-1;previewGain=0;
+ if(claims.length){soundNote(660,.12,.045);setTimeout(()=>soundNote(820,.12,.035),90)}else soundNote(who===1?390:290,.05,.015);
+ const available=legalIds().length;ended=turn>=MAX_TURNS||available===0||score().reduce((a,b)=>a+b,0)===CELL_COUNT;
+ if(ended)finish();else if(mode==='cpu'&&side()===1){cpuThinking=true;timer=setTimeout(cpuMove,450)}
+ update();draw();return true}
+function undo(){if(!history.length||dialogOpen)return false;clearTimeout(timer);timer=null;cpuThinking=false;
+let state=history.pop();if(mode==='cpu'&&state.turn%2===1&&history.length)state=history.pop();
+edges=state.edges;owner=state.owner;turn=state.turn;ended=false;hover=-1;showHint=false;flash=null;$('winCover').hidden=true;update();draw();soundNote(440,.07,.02);return true}
+function finish(){ended=true;cpuThinking=false;const [b,r]=score();let message;if(b===r)message='引き分け！';else if(b>r)message=mode==='cpu'?'あなたの勝ち！':'青の勝ち！';else message=mode==='cpu'?'CPUの勝ち！':'オレンジの勝ち！';
+$('winTitle').textContent=b===r?'DRAW!':b>r?'BLUE WIN!':'ORANGE WIN!';$('winEmoji').textContent=b===r?'🤝':b>r?'🏆':'🎖️';$('winText').textContent=`${message}\n青 ${b} マス － オレンジ ${r} マス`;$('winCover').hidden=false;
+if(mode==='cpu'){const key=mapIndex+':'+difficulty;const stats=record[key]||{win:0,play:0};stats.play++;if(b>r)stats.win++;record[key]=stats;save()}
+[560,720,870].forEach((f,i)=>setTimeout(()=>soundNote(f,.13,.026),120*i));}
+// Candidate preference: finish loops now, or build on existing sections without gifting large enclosed areas.
+function touching(id,e){let n=0;if(id<HCOUNT){const y=(id/N)|0,x=id%N;for(const [xx,yy,vert] of [[x,y-1,1],[x,y,1],[x+1,y-1,1],[x+1,y,1]])if(yy>=0&&yy<N&&e[v(xx,yy)])n++;for(const [xx,yy] of [[x-1,y],[x+1,y]])if(xx>=0&&xx<N&&e[h(xx,yy)])n++}
+else{const p=id-HCOUNT,y=(p/(N+1))|0,x=p%(N+1);for(const [xx,yy] of [[x-1,y],[x,y],[x-1,y+1],[x,y+1]])if(xx>=0&&xx<N&&e[h(xx,yy)])n++;for(const [xx,yy] of [[x,y-1],[x,y+1]])if(yy>=0&&yy<N&&e[v(xx,yy)])n++}return n}
+function threat(e,own,limit=999){let big=0;for(let id=0;id<EDGE_COUNT;id++)if(!e[id]){e[id]=1;const g=getClaims(e,own).length;e[id]=0;if(g>big){big=g;if(big>=limit)return big}}return big}
+function chooseCpu(){const legal=legalIds();if(!legal.length)return -1;
+if(difficulty==='easy'){const opts=legal.map(id=>({id,g:gainIf(id),t:touching(id,edges)}));opts.sort((a,b)=>(b.g+Math.random()*3.4+b.t*.22)-(a.g+Math.random()*3.4+a.t*.22));return opts[0].id}
+const ranked=legal.map(id=>({id,g:gainIf(id),t:touching(id,edges),rand:Math.random()}));ranked.sort((a,b)=>(b.g*100+b.t*1.8+b.rand*3)-(a.g*100+a.t*1.8+a.rand*3));
+if(difficulty==='normal')return ranked[0].id;
+// Hard CPU: look ahead one player reply; select among useful moves, penalize immediate opponent captures.
+let choice=ranked[0].id,best=-Infinity;const shortlist=ranked.slice(0,Math.min(34,ranked.length));
+for(const c of shortlist){const ee=edges.slice(),oo=owner.slice();ee[c.id]=2;for(const k of getClaims(ee,oo))oo[k]=2;
+const opp=threat(ee,oo,36);const remaining=legalIds(ee).length;
+// avoid missing opportunities that would be taken immediately
+const value=c.g*100-opp*69+c.t*.8+Math.random()*1.2+(remaining===0?0:0);
+if(value>best){best=value;choice=c.id}}
+return choice}
+function cpuMove(){timer=null;if(ended||mode!=='cpu'||side()!==1)return;cpuThinking=false;const id=chooseCpu();if(id>=0)applyMove(id,true);else finish()}
+function update(){const [b,r]=score();$('blueScore').textContent=b;$('orangeScore').textContent=r;$('turnCount').textContent=turn+'/'+MAX_TURNS;
+$('blueTitle').textContent=mode==='cpu'?'あなた':'1P';$('orangeTitle').textContent=mode==='cpu'?'CPU':'2P';$('bluePanel').classList.toggle('active',!ended&&side()===0);$('orangePanel').classList.toggle('active',!ended&&side()===1);
+$('modeCpu').classList.toggle('active',mode==='cpu');$('modeTwo').classList.toggle('active',mode==='two');$('mapButton').textContent='▦ MAP '+(mapIndex+1)+' ▾';$('sound').textContent=sound?'♪ 音 ON':'♪ 音 OFF';$('undo').disabled=!history.length;$('hint').classList.toggle('active',showHint);$('hint').disabled=ended||cpuThinking||dialogOpen;
+const bar=$('turnMsg');bar.className='turn-msg'+(ended?' end':side()?' red':'');const text=ended?'対局終了！ 結果を見てみよう':cpuThinking?'CPUが考えています…':hover>=0&&previewGain>0?`ここを囲むと +${previewGain} マス！`:side()===0?'青の番：点線をタップ！':'オレンジの番：点線をタップ！';$('turnText').textContent=text;
+const key=mapIndex+':'+difficulty,s=record[key];$('record').textContent=mode==='cpu'&&s?`MAP ${mapIndex+1} · CPU ${difficulty==='hard'?'強い':difficulty==='easy'?'やさしい':'ふつう'}　${s.win}勝 / ${s.play}戦`: '囲んだマスは最後の線を引いた人の陣地！'}
+function setHover(id){if(id===hover)return;hover=id;previewGain=hover>=0?gainIf(hover):0;update();draw()}
+function edgeFromPoint(px,py){const rect=canvas.getBoundingClientRect(),x=(px-rect.left)/rect.width*CANVAS,y=(py-rect.top)/rect.height*CANVAS;const ux=(x-MARGIN)/T,uy=(y-MARGIN)/T;if(ux<-.25||uy<-.25||ux>N+.25||uy>N+.25)return -1;
+const xi=Math.round(ux),yi=Math.round(uy),dx=Math.abs(ux-xi),dy=Math.abs(uy-yi);
+let id=-1;if(dx<=dy){const yy=Math.floor(uy);if(xi>=0&&xi<=N&&yy>=0&&yy<N&&dx<=.35)id=v(xi,yy)}else{const xx=Math.floor(ux);if(xx>=0&&xx<N&&yi>=0&&yi<=N&&dy<=.35)id=h(xx,yi)}
+return id>=0&&!edges[id]?id:-1}
+let gesture=null;
+canvas.addEventListener('pointerdown',ev=>{if(!humanTurn())return;ev.preventDefault();try{canvas.setPointerCapture(ev.pointerId)}catch(e){}gesture={x:ev.clientX,y:ev.clientY,id:edgeFromPoint(ev.clientX,ev.clientY)};setHover(gesture.id)});
+canvas.addEventListener('pointermove',ev=>{if(!humanTurn())return;if(gesture){if(Math.hypot(gesture.x-ev.clientX,gesture.y-ev.clientY)>19)setHover(-1)}else if(ev.pointerType==='mouse')setHover(edgeFromPoint(ev.clientX,ev.clientY))});
+canvas.addEventListener('pointerup',ev=>{if(!gesture)return;const p=gesture;gesture=null;if(Math.hypot(p.x-ev.clientX,p.y-ev.clientY)<19&&p.id>=0&&humanTurn()){applyMove(p.id)}else setHover(-1)});
+canvas.addEventListener('pointercancel',()=>{gesture=null;setHover(-1)});canvas.addEventListener('pointerleave',()=>{if(!gesture)setHover(-1)});
+function rr(x,y,w0,h0,r,col){ctx.fillStyle=col;ctx.beginPath();ctx.roundRect(x,y,w0,h0,r);ctx.fill()}
+function fenceGeom(id){if(id<HCOUNT){const y=(id/N)|0,x=id%N;return [MARGIN+x*T,MARGIN+y*T,MARGIN+(x+1)*T,MARGIN+y*T]}
+const k=id-HCOUNT,y=(k/(N+1))|0,x=k%(N+1);return[MARGIN+x*T,MARGIN+y*T,MARGIN+x*T,MARGIN+(y+1)*T]}
+function drawFence(id,color,width,glow=0){const [x1,y1,x2,y2]=fenceGeom(id);ctx.save();ctx.lineCap='round';if(glow){ctx.shadowColor=color;ctx.shadowBlur=glow}ctx.strokeStyle=color;ctx.lineWidth=width;ctx.beginPath();ctx.moveTo(x1,y1);ctx.lineTo(x2,y2);ctx.stroke();ctx.restore()}
+function draw(){ctx.clearRect(0,0,CANVAS,CANVAS);const back=ctx.createLinearGradient(0,0,0,CANVAS);back.addColorStop(0,'#173d4b');back.addColorStop(1,'#0f2a3d');ctx.fillStyle=back;ctx.fillRect(0,0,CANVAS,CANVAS);
+rr(MARGIN-19,MARGIN-19,N*T+38,N*T+38,17,'#223b4d');rr(MARGIN-7,MARGIN-7,N*T+14,N*T+14,8,'#082439');
+const isFlash=flash&&performance.now()-flashStart<900;for(let y=0;y<N;y++)for(let x=0;x<N;x++){
+ const k=y*N+x,X=MARGIN+x*T,Y=MARGIN+y*T,a=owner[k];
+ const base=a===1?'#2e8ba6':a===2?'#a5663c':(x+y)%2===0?'#d7cdb5':'#c8c0ab';
+ rr(X+2,Y+2,T-4,T-4,4,base);
+ if(!a){ctx.fillStyle='#f0dfbe35';ctx.fillRect(X+6,Y+7,T-12,3);ctx.fillStyle='#56656f28';ctx.fillRect(X+T*.2,Y+T*.71,3,3)}
+ else{rr(X+7,Y+7,T-14,T-14,4,a===1?'#74defb2b':'#ffcf932b');ctx.fillStyle=a===1?'#b3f7ff':'#ffe1bb';ctx.globalAlpha=.27;ctx.font='900 34px system-ui';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText('◆',X+T/2,Y+T/2);ctx.globalAlpha=1}
+ if(isFlash&&flash.includes(k)){ctx.fillStyle=`rgba(255,247,185,${Math.max(0,.38*(1-(performance.now()-flashStart)/900))})`;ctx.fillRect(X+3,Y+3,T-6,T-6)}
+}
+// Draw all available segments as unobtrusive dotted fences.
+ctx.save();ctx.strokeStyle='#e5ebea45';ctx.lineWidth=2.1;ctx.lineCap='round';ctx.setLineDash([3,9]);for(let i=0;i<EDGE_COUNT;i++)if(!edges[i]){const [x1,y1,x2,y2]=fenceGeom(i);ctx.beginPath();ctx.moveTo(x1,y1);ctx.lineTo(x2,y2);ctx.stroke()}ctx.restore();
+for(let i=0;i<EDGE_COUNT;i++)if(edges[i])drawFence(i,edges[i]===3?'#647b8c':edges[i]===1?'#53d8fa':'#ffa66c',edges[i]===3?7.3:9,edges[i]===3?0:5);
+// Hints show immediate capture opportunities; squares remain unmarked when there is no one-move closure.
+if(showHint&&humanTurn())for(let i=0;i<EDGE_COUNT;i++)if(!edges[i]&&gainIf(i)>0)drawFence(i,'#ffdf8e',7.5,9);
+if(hover>=0&&humanTurn()){drawFence(hover,'#fff3ac',10,14);if(previewGain>0){const [a,b,c,d]=fenceGeom(hover);const mx=(a+c)/2,my=(b+d)/2;rr(Math.min(CANVAS-96,Math.max(15,mx-43)),Math.max(9,my-52),86,29,9,'#102d3aef');ctx.font='1000 18px system-ui';ctx.fillStyle='#ffe6a5';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText('+'+previewGain+' マス',Math.min(CANVAS-53,Math.max(58,mx)),Math.max(23,my-37))}}
+// Rivets at intersections make the grid readable on small screens.
+for(let y=0;y<=N;y++)for(let x=0;x<=N;x++){const X=MARGIN+x*T,Y=MARGIN+y*T;ctx.fillStyle='#132e3e';ctx.beginPath();ctx.arc(X,Y,4.6,0,Math.PI*2);ctx.fill();ctx.fillStyle='#bbcdd5';ctx.beginPath();ctx.arc(X,Y,2.5,0,Math.PI*2);ctx.fill()}
+ctx.strokeStyle='#a0b0b77a';ctx.lineWidth=2;ctx.strokeRect(MARGIN-17,MARGIN-17,N*T+34,N*T+34);
+if(isFlash)requestAnimationFrame(draw)}
+function closeMap(){dialogOpen=false;$('mapModal').hidden=true}function openMap(){if(cpuThinking)return;dialogOpen=true;pendingMap=mapIndex;$('mapModal').hidden=false;$('difficulty').value=difficulty;$('difficultyLabel').hidden=mode==='two';$('difficulty').hidden=mode==='two';const box=$('mapOptions');box.replaceChildren();MAPS.forEach((m,i)=>{const b=document.createElement('button');b.className='map-option'+(i===pendingMap?' active':'');b.type='button';b.innerHTML=`<span class="n">0${i+1}</span><span><strong>${m.name}</strong><small>${m.detail}</small></span>`;b.addEventListener('click',()=>{pendingMap=i;[...box.children].forEach((q,k)=>q.classList.toggle('active',k===i))});box.append(b)})}
+function toggleMode(x){if(mode===x||cpuThinking)return;mode=x;fresh()}
+$('modeCpu').addEventListener('click',()=>toggleMode('cpu'));$('modeTwo').addEventListener('click',()=>toggleMode('two'));$('mapButton').addEventListener('click',openMap);$('closeMap').addEventListener('click',closeMap);$('mapModal').addEventListener('click',ev=>{if(ev.target===$('mapModal'))closeMap()});$('applyMap').addEventListener('click',()=>{mapIndex=pendingMap;difficulty=$('difficulty').value;fresh()});$('changeMapWin').addEventListener('click',openMap);
+$('restart').addEventListener('click',fresh);$('again').addEventListener('click',fresh);$('undo').addEventListener('click',undo);$('hint').addEventListener('click',()=>{showHint=!showHint;update();draw();soundNote(690,.055,.016)});$('sound').addEventListener('click',()=>{sound=!sound;save();update();soundNote(540,.06,.02)});
+const closeHelp=()=>$('helpModal').hidden=true;$('help').addEventListener('click',()=>{$('helpModal').hidden=false;dialogOpen=true});$('closeHelp').addEventListener('click',()=>{closeHelp();dialogOpen=false});$('closeHelpBottom').addEventListener('click',()=>{closeHelp();dialogOpen=false});$('helpModal').addEventListener('click',e=>{if(e.target===$('helpModal')){closeHelp();dialogOpen=false}});
+window.addEventListener('keydown',e=>{if(e.key==='Escape'){closeMap();closeHelp();dialogOpen=false}if(e.key.toLowerCase()==='z'&&!e.repeat)undo()});
+if(new URLSearchParams(location.search).has('test'))window.__gururiTest={state:()=>({mode,mapIndex,difficulty,turn,ended,cpuThinking,edges:[...edges],owner:[...owner],scores:score(),preset:edges.filter(x=>x===3).length,legal:legalIds().length}),apply:applyMove,undo,reset:fresh,setMap:i=>{mapIndex=i;fresh()},setMode:toggleMode,setDifficulty:x=>{difficulty=x;save()},getClaims,reachable,chooseCpu,gainIf,legalIds,createPreset,edgeFromPoint,finish};
+fresh();
+})();
+</script>
+</body>
+</html>
