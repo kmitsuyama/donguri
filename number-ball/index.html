@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
 <meta name="theme-color" content="#0b142a">
-<title>NUMBER BALL v1.2 — 1から9のナンバーハント</title>
+<title>NUMBER BALL v1.3 — 1から9のナンバーハント</title>
 <style>
 :root{color-scheme:dark;--bg:#0b142a;--panel:#14233c;--line:#385575;--text:#f1f7ff;--muted:#a4bbce;--gold:#ffe08d;--cyan:#8ff2e7;--red:#ff7d90}
 *{box-sizing:border-box}
@@ -61,13 +61,14 @@ const rand=(a,b)=>a+Math.random()*(b-a);
 const distance=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y);
 let state='intro',balls=[],player=null,target=1,misses=0,elapsed=0,bestTime=0,turning=false;
 let particles=[],toasts=[],flash=0,blink=0,audio=null,soundOn=true,lastT=0,notice='';
+let countdownElapsed=0,countdownShown=3,goFlash=0,pausedFrom='running';
 try{bestTime=Number(localStorage.getItem('number_ball_best_time'))||0}catch(e){}
 function formatTime(t){const m=Math.floor(t/60),s=Math.floor(t%60);return `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`}
 function updateHUD(){
  el('next').textContent=target<=9?target:'✓';el('miss').textContent=`${misses} / 3`;
  el('time').textContent=formatTime(elapsed);
- el('start').textContent=state==='running'?'Ⅱ 一時停止':state==='paused'?'▶ 再開':state==='intro'?'▶ スタート':'↻ もう一度';
- const msg=state==='intro'?'数字の<b>1</b>から順に集めよう！':state==='running'?`次は <b>${target}</b> の玉を取ろう！`:state==='paused'?'一時停止中':state==='over'?'3回間違えました':'1から9まで全部クリア！';
+ el('start').textContent=state==='running'||state==='countdown'?'Ⅱ 一時停止':state==='paused'?'▶ 再開':state==='intro'?'▶ スタート':'↻ もう一度';
+ const msg=state==='intro'?'数字の<b>1</b>から順に集めよう！':state==='countdown'?`配置を確認！ 開始まで <b>${countdownShown}</b>`:state==='running'?`次は <b>${target}</b> の玉を取ろう！`:state==='paused'?'一時停止中':state==='over'?'3回間違えました':'1から9まで全部クリア！';
  el('status').innerHTML=msg;
 }
 function placeBalls(){
@@ -94,11 +95,27 @@ function randomize(){
  }
  player={x:W/2,y:H/2,a:rand(0,TAU)};
 }
-function begin(){target=1;misses=0;elapsed=0;flash=0;blink=0;particles=[];toasts=[];notice='';randomize();state='running';setTurn(false);updateHUD();beep(550,.11,'sine',.035);beep(830,.18,'triangle',.03,.12)}
+function begin(){
+ target=1;misses=0;elapsed=0;flash=0;blink=0;particles=[];toasts=[];notice='';
+ randomize();countdownElapsed=0;countdownShown=3;goFlash=0;state='countdown';
+ setTurn(false);updateHUD();beep(570,.12,'sine',.035);
+}
+// The balls and player are already drawn, but neither moves until GO! appears.
+function advanceCountdown(dt){
+ if(state!=='countdown')return;
+ countdownElapsed=Math.min(3,countdownElapsed+dt);
+ const shown=Math.max(1,3-Math.floor(countdownElapsed));
+ if(countdownElapsed>=3){
+  state='running';goFlash=.85;beep(920,.21,'triangle',.038);updateHUD();
+ }else if(shown!==countdownShown){
+  countdownShown=shown;beep(580,.10,'sine',.033);updateHUD();
+ }
+}
 function toggle(){
  if(state==='intro'||state==='clear'||state==='over')begin();
- else if(state==='running'){state='paused';setTurn(false)}
- else if(state==='paused')state='running';
+ else if(state==='running'||state==='countdown'){
+  pausedFrom=state;state='paused';setTurn(false);
+ }else if(state==='paused')state=pausedFrom;
  updateHUD();
 }
 el('start').addEventListener('click',toggle);
@@ -127,8 +144,8 @@ window.addEventListener('keydown',e=>{if(['Space','ArrowRight','Enter'].includes
 });
 window.addEventListener('keyup',e=>{if(held.delete(e.code)&&held.size===0)setTurn(false)});
 window.addEventListener('blur',()=>{held.clear();setTurn(false)});
-document.addEventListener('visibilitychange',()=>{if(document.hidden){held.clear();setTurn(false);if(state==='running'){state='paused';updateHUD()}}});
-canvas.addEventListener('pointerdown',e=>{if(state!=='running'){e.preventDefault();toggle()}});
+document.addEventListener('visibilitychange',()=>{if(document.hidden){held.clear();setTurn(false);if(state==='running'||state==='countdown'){pausedFrom=state;state='paused';updateHUD()}}});
+canvas.addEventListener('pointerdown',e=>{if(state==='intro'||state==='paused'||state==='clear'||state==='over'){e.preventDefault();toggle()}});
 function sparks(x,y,color='#e8f6ff',amount=12){for(let i=0;i<amount;i++){
  const a=rand(0,TAU),s=rand(25,100);particles.push({x,y,vx:Math.cos(a)*s,vy:Math.sin(a)*s,ttl:rand(.3,.7),max:.7,size:rand(1.8,4.1),color});
 }}
@@ -210,7 +227,19 @@ function drawEffects(dt){
  for(const t of toasts){if(state==='running'){t.y-=18*dt;t.ttl-=dt}ctx.save();ctx.globalAlpha=clamp(t.ttl*2,0,1);ctx.textAlign='center';ctx.font='900 14px system-ui,sans-serif';ctx.lineWidth=3;ctx.strokeStyle='#16243e';ctx.strokeText(t.text,t.x,t.y);ctx.fillStyle=t.color;ctx.fillText(t.text,t.x,t.y);ctx.restore()}
  toasts=toasts.filter(t=>t.ttl>0);
 }
-function overlay(){if(state==='running')return;
+function overlay(){
+ // Compact counter at the top: do not dim the stage while the user studies number positions.
+ if(state==='countdown'||(state==='running'&&goFlash>0)){
+  const go=state==='running',label=go?'GO!':String(countdownShown),bw=go?128:92,bx=(W-bw)/2;
+  ctx.save();rounded(bx,12,bw,67,15,'#061529ed');
+  ctx.strokeStyle=go?'#9dfae4':'#ffe4a1';ctx.lineWidth=2.5;
+  ctx.beginPath();ctx.roundRect(bx+1.5,13.5,bw-3,64,13);ctx.stroke();
+  ctx.fillStyle=go?'#a7ffe5':'#ffecba';ctx.textAlign='center';ctx.textBaseline='middle';
+  ctx.shadowColor=go?'#59f2d9':'#f0bf71';ctx.shadowBlur=15;
+  ctx.font=`1000 ${go?43:51}px Impact,system-ui,sans-serif`;
+  ctx.fillText(label,W/2,48);ctx.restore();return;
+ }
+ if(state==='running')return;
  ctx.save();ctx.fillStyle='#071327cc';ctx.fillRect(0,0,W,H);
  const boxY=184;rounded(31,boxY,W-62,208,18,'#17263e');ctx.strokeStyle='#8fb5c9';ctx.lineWidth=2;ctx.strokeRect(42,boxY+11,W-84,185);
  ctx.textAlign='center';ctx.fillStyle=state==='over'?'#ff8e9e':'#fff0ba';ctx.shadowBlur=15;ctx.shadowColor=state==='over'?'#d84a70':'#d5aa6b';
@@ -236,11 +265,16 @@ function overlay(){if(state==='running')return;
  ctx.restore();
 }
 function draw(dt){background();for(const b of balls)drawBall(b);drawPlayer();drawEffects(dt);overlay()}
-function frame(now){const dt=lastT?clamp((now-lastT)/1000,0,.035):0;lastT=now;if(state==='running')step(dt);draw(dt);requestAnimationFrame(frame)}
+function frame(now){
+ const dt=lastT?clamp((now-lastT)/1000,0,.035):0;lastT=now;
+ if(state==='countdown')advanceCountdown(dt);
+ else if(state==='running'){step(dt);goFlash=Math.max(0,goFlash-dt)}
+ draw(dt);requestAnimationFrame(frame);
+}
 // Lightweight deterministic hooks only available when ?test=1 is supplied.
 if(new URLSearchParams(location.search).has('test'))window.__numberBallTest={
- state:()=>({state,target,misses,elapsed,player:player&&{...player},balls:balls.map(b=>({...b})),turning}),
- start:begin, step, setTurning:setTurn, setPlayer:(p)=>{player={...player,...p}},setBalls:(b)=>{balls=b.map(x=>({...x}))},setTarget:(n)=>{target=n;updateHUD()},setMisses:(n)=>{misses=n;updateHUD()},getR:()=>R, getPlayerR:()=>PLAYER_R
+ state:()=>({state,target,misses,elapsed,countdownElapsed,countdownShown,goFlash,player:player&&{...player},balls:balls.map(b=>({...b})),turning}),
+ start:begin, advanceCountdown, toggle, step, setTurning:setTurn, setPlayer:(p)=>{player={...player,...p}},setBalls:(b)=>{balls=b.map(x=>({...x}))},setTarget:(n)=>{target=n;updateHUD()},setMisses:(n)=>{misses=n;updateHUD()},getR:()=>R, getPlayerR:()=>PLAYER_R
 };
 randomize();updateHUD();requestAnimationFrame(frame);
 })();
