@@ -1,0 +1,166 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<meta name="theme-color" content="#0a1424">
+<title>KAGE TORI v1.0 | 光と影の陣取りゲーム</title>
+<style>
+:root{color-scheme:dark;--bg:#091424;--card:#13243b;--line:#40546b;--ink:#edf7ff;--muted:#a6bacb;--blue:#5fe4fa;--orange:#ffb469;--gold:#ffdc8d}
+*{box-sizing:border-box}html{background:var(--bg);overscroll-behavior:none}body{margin:0;min-height:100dvh;background:radial-gradient(ellipse at 52% -18%,#243954 0%,#0d2137 45%,#071321 100%);color:var(--ink);font-family:system-ui,-apple-system,"Hiragino Kaku Gothic ProN","Yu Gothic",sans-serif;-webkit-tap-highlight-color:transparent}
+button{font:inherit;cursor:pointer;touch-action:manipulation}button:disabled{cursor:default;opacity:.46}.app{width:min(100%,520px);padding:10px 12px max(14px,env(safe-area-inset-bottom));margin:auto}header{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:10px}.brand{display:flex;align-items:center;gap:10px}.emblem{width:37px;height:37px;display:grid;place-items:center;border-radius:12px;background:conic-gradient(from 225deg,#5fe4fa 0 41%,#14283d 41% 56%,#ffb469 56% 93%,#5fe4fa 93%);box-shadow:0 0 18px #60dfe744;color:#0d2033;font-size:23px}.brand h1{font-size:clamp(24px,6.2vw,34px);letter-spacing:.055em;line-height:1.05;margin:0;font-weight:950;text-shadow:0 2px 7px #0006}.brand h1 span{color:var(--blue)}.brand small{display:block;margin-top:4px;color:#b6c9d9;font-size:10px;letter-spacing:.13em;font-weight:800}.round-pill{font-size:10px;white-space:nowrap;padding:7px 9px;background:#142b42;border:1px solid #547087;border-radius:20px;color:#d6e8ef;font-weight:900}
+.settings{display:flex;justify-content:space-between;align-items:center;gap:10px;margin:0 0 9px}.seg{display:flex;background:#0c1e31;border:1px solid #496179;border-radius:11px;padding:3px;gap:3px;flex:1}.seg button{min-height:34px;border:0;border-radius:8px;background:none;color:#9db7c7;font-weight:900;font-size:12px;flex:1;padding:5px 8px}.seg button.active{background:#39556d;color:#f5fbff;box-shadow:0 1px 6px #0006}.mapbtn{white-space:nowrap;border:1px solid #7992a1;border-radius:10px;background:#1a334c;color:#e5f4f7;min-height:41px;padding:6px 11px;font-size:12px;font-weight:900}
+.scorebar{display:grid;grid-template-columns:1fr 82px 1fr;align-items:stretch;gap:7px;margin-bottom:8px}.score{border:1px solid #628397;background:linear-gradient(135deg,#18374c,#101f34);border-radius:12px;padding:7px 10px}.score.orange{border-color:#a48064;background:linear-gradient(225deg,#473226,#1b2638)}.score-top{font-size:10px;font-weight:900;letter-spacing:.06em;display:flex;justify-content:space-between;align-items:center;color:#b9d0dc}.score-top .name{color:var(--blue)}.score.orange .score-top .name{color:var(--orange)}.score strong{font-size:clamp(23px,7vw,32px);line-height:1.15;font-variant-numeric:tabular-nums}.score.blue strong{color:#b1f7ff}.score.orange strong{color:#ffe0b6}.score small{font-size:10px;color:#bacbd3;font-weight:800}.score.active{box-shadow:inset 0 0 0 1px #c5fbff,0 0 12px #60eaff28}.score.orange.active{box-shadow:inset 0 0 0 1px #ffdbb9,0 0 12px #ffb46924}.turns{display:flex;align-items:center;justify-content:center;flex-direction:column;border:1px solid #526479;background:#102238;border-radius:11px;text-align:center}.turns strong{font-size:22px;line-height:1.2;font-variant-numeric:tabular-nums;color:#fff0c8}.turns span{font-size:9px;color:#adbfce;font-weight:900}
+.board-wrap{width:min(100%,466px,calc(100dvh - 301px));min-width:min(100%,238px);margin:0 auto;position:relative;aspect-ratio:1;padding:5px;background:linear-gradient(135deg,#8293a3,#2e495f 45%,#6b7482);border-radius:15px;box-shadow:0 14px 32px #0008,0 0 0 2px #182e44;overflow:hidden}canvas{width:100%;height:100%;display:block;touch-action:manipulation;background:#102238;border-radius:9px;user-select:none;-webkit-user-select:none;cursor:pointer}.board-tag{position:absolute;left:12px;bottom:11px;font-size:8px;letter-spacing:.16em;font-weight:800;opacity:.55;pointer-events:none;text-shadow:0 1px 4px #000}
+.turnmsg{display:flex;align-items:center;justify-content:center;gap:8px;margin:9px 0 7px;min-height:25px;font-size:13px;font-weight:950;color:#a4edff;text-align:center}.turnmsg.orange{color:#ffcc94}.turnmsg.finished{color:#ffe7a5}.turnmsg .dot{height:8px;width:8px;background:currentColor;border-radius:50%;box-shadow:0 0 12px currentColor}.turnmsg .dot.pulse{animation:pulse 1s ease-in-out infinite alternate}@keyframes pulse{to{opacity:.3;transform:scale(.75)}}
+.controls{display:grid;grid-template-columns:1fr 1fr;gap:9px;max-width:420px;margin:0 auto}.rotate{min-height:61px;display:flex;align-items:center;justify-content:center;gap:11px;border:2px solid #90a9ba;border-radius:15px;background:linear-gradient(#3b5a72,#1b344d);box-shadow:0 4px #0a1d30;color:#f1f8fc;font-weight:950;font-size:14px}.rotate b{font-size:32px;line-height:1;color:#ffe8ab}.rotate:active:not(:disabled){transform:translateY(3px);box-shadow:0 1px #0a1d30}.rotate:disabled{background:#182b3d}.rotate:disabled b{color:#7b94a0}.controls .rotate span small{display:block;font-size:10px;color:#bdcdd6;margin-top:2px}
+.under{margin:11px 0 2px;display:flex;justify-content:center;gap:8px}.subbtn{border:1px solid #50697f;background:#142b42;color:#cce0ea;border-radius:9px;padding:7px 10px;min-height:34px;font-size:11px;font-weight:900}.guide{font-size:11px;text-align:center;color:#bccedc;line-height:1.6;margin:10px 0 0}.guide b{color:#ffe7b3}.guide .bluecolor{color:#6ae8fc}.guide .orangecolor{color:#ffbd80}
+[hidden]{display:none!important}.modal{position:fixed;inset:0;z-index:20;background:#030b17e4;display:flex;justify-content:center;align-items:center;padding:18px}.dialog{width:min(100%,460px);max-height:92dvh;overflow:auto;border:2px solid #8294a4;background:linear-gradient(155deg,#1c344b,#0d2036);border-radius:18px;padding:18px;box-shadow:0 18px 50px #000c}.dialoghead{display:flex;align-items:center;justify-content:space-between;gap:10px}.dialog h2{font-size:21px;color:#ffdfa0;margin:0 0 8px}.xbtn{border:1px solid #6d8393;color:#deedf3;background:#254159;border-radius:9px;min-height:38px;min-width:38px;font-size:20px}.dialog p{font-size:12px;color:#d4e5ee;line-height:1.8;margin:9px 0 14px}.maps{display:grid;gap:9px;margin:12px 0}.mapoption{display:flex;align-items:center;gap:12px;border:1px solid #718ba2;background:#19364d;color:#e9f5fd;border-radius:12px;padding:11px;min-height:58px;text-align:left}.mapoption.active{border:2px solid #ffe0a3;background:#34465b}.mapoption .no{color:#ffdba4;font-size:19px;font-weight:1000}.mapoption strong{font-size:14px}.mapoption small{display:block;font-size:10px;color:#b1c9d6;margin-top:3px}.dialog label{font-size:12px;color:#d1e5f0;font-weight:900}.dialog select{width:100%;border:1px solid #8198a8;color:#e9f5fd;background:#1a3851;border-radius:10px;padding:9px;margin:6px 0 10px;min-height:42px;font:inherit;font-size:13px}.dialog .emphasis{color:#ffdfa0}.primary{width:100%;border:0;border-radius:11px;padding:12px;background:#ffdc99;color:#25303d;font-size:14px;font-weight:1000;min-height:45px}.wincover{position:absolute;inset:5px;z-index:4;display:grid;place-items:center;background:#07182acc;border-radius:10px;padding:14px}.winbox{text-align:center;width:100%;max-width:310px;background:linear-gradient(155deg,#243b53,#10263c);border:2px solid #dcbf8e;border-radius:17px;padding:22px 14px;box-shadow:0 12px 36px #0009}.winbox .medal{font-size:38px}.winbox h2{margin:6px 0;font-size:23px;color:#ffe1a1}.winbox p{margin:10px 0 14px;font-weight:800;font-size:13px;line-height:1.8}.winbox .primary{margin:4px 0}.minor{border:1px solid #7c9db1;background:#26445a;color:#eef7fa;min-height:40px;border-radius:10px;width:100%;font-weight:900;margin-top:8px}.helpstep{display:flex;gap:9px;align-items:flex-start;margin:10px 0;font-size:13px;color:#daeaf1;line-height:1.65}.helpstep span{flex:0 0 24px;height:24px;display:grid;place-items:center;color:#203344;background:#ffe0a1;border-radius:50%;font-size:12px;font-weight:950}.legend{display:flex;gap:7px;flex-wrap:wrap;justify-content:center;margin-top:11px}.legend span{font-size:11px;border:1px solid #627a8f;padding:5px 8px;border-radius:8px}
+@media(max-height:770px){.app{padding-top:6px}header{margin-bottom:6px}.settings{margin-bottom:6px}.scorebar{margin-bottom:6px}.board-wrap{width:min(100%,466px,calc(100dvh - 273px))}.turnmsg{margin:6px 0 5px}.rotate{min-height:54px}.under{margin-top:8px}.guide{margin-top:6px}}
+@media(max-height:650px){.app{padding-top:5px}.board-wrap{width:min(100%,466px,calc(100dvh - 244px))}.score{padding:5px 8px}.brand h1{font-size:23px}.brand small{font-size:8px}.round-pill{display:none}.guide{display:none}.rotate{min-height:48px}.under{margin-top:6px}.turnmsg{font-size:12px;margin:4px 0}}
+@media(max-width:345px){.app{padding-left:8px;padding-right:8px}.scorebar{grid-template-columns:1fr 67px 1fr;gap:5px}.score{padding:5px 6px}.score-top{font-size:9px}.turns strong{font-size:20px}.rotate{gap:4px;font-size:12px}.rotate b{font-size:28px}.controls{gap:7px}.mapbtn{padding:6px 8px;font-size:11px}}
+@media(min-width:720px){.app{padding-top:18px}}
+</style>
+</head>
+<body>
+<main class="app">
+ <header><div class="brand"><div class="emblem" aria-hidden="true">◐</div><div><h1>KAGE <span>TORI</span></h1><small>光と影の陣取りゲーム</small></div></div><div class="round-pill">LIGHT × TERRITORY</div></header>
+ <div class="settings"><div class="seg" role="group" aria-label="プレイモード"><button id="modeCpu" class="active" type="button">1P · CPU対戦</button><button id="modeTwo" type="button">2P · ふたり対戦</button></div><button id="mapButton" class="mapbtn" type="button">▦ MAP 1 ▾</button></div>
+ <div class="scorebar"><div id="bluePanel" class="score blue active"><div class="score-top"><span class="name">● BLUE</span><span id="blueTitle">あなた</span></div><strong id="blueScore">0</strong><small>マス</small></div><div class="turns"><strong id="turnCount">0/16</strong><span>TURN</span></div><div id="orangePanel" class="score orange"><div class="score-top"><span class="name">● ORANGE</span><span id="orangeTitle">CPU</span></div><strong id="orangeScore">0</strong><small>マス</small></div></div>
+ <div class="board-wrap"><canvas id="board" width="672" height="672" aria-label="影取りの盤面。自分のライトをタップして選び、下の左右ボタンで回転させます"></canvas><div class="board-tag">KAGE TORI / FIELD 12×12</div><div id="winCover" class="wincover" hidden><div class="winbox"><div class="medal" id="winMedal">🏆</div><h2 id="winTitle">BLUE WIN!</h2><p id="winText"></p><button id="again" class="primary" type="button">↻ もう一度遊ぶ</button><button id="changeMapWin" class="minor" type="button">ほかのマップへ</button></div></div></div>
+ <div id="turnMsg" class="turnmsg"><span class="dot pulse"></span><span id="turnText">青いライトをタップして選ぼう！</span></div>
+ <div class="controls"><button id="ccw" type="button" class="rotate" disabled><b>↶</b><span>左へ90°<small>反時計回り</small></span></button><button id="cw" type="button" class="rotate" disabled><b>↷</b><span>右へ90°<small>時計回り</small></span></button></div>
+ <div class="under"><button id="restart" class="subbtn" type="button">↻ 最初から</button><button id="help" class="subbtn" type="button">? 遊び方</button><button id="sound" class="subbtn" type="button">♪ 音 ON</button></div>
+ <p class="guide">ライトを <b>90°回すだけ</b>！壁の裏は影になり、<br><span class="bluecolor">青</span>と<span class="orangecolor">オレンジ</span>の光が競い合います。<b>8手ずつ</b>で勝負！</p>
+</main>
+<div id="mapModal" class="modal" hidden role="dialog" aria-modal="true" aria-labelledby="mapTitle"><div class="dialog"><div class="dialoghead"><h2 id="mapTitle">マップを選ぶ</h2><button class="xbtn" id="closeMap" type="button">×</button></div><p>3つの舞台で、光と影の駆け引きが変わります。<br>マップを変更すると対局が最初から始まります。</p><div id="mapOptions" class="maps"></div><label id="difficultyLabel" for="difficulty">CPUの強さ</label><select id="difficulty"><option value="easy">やさしい</option><option value="normal" selected>ふつう</option><option value="hard">つよい</option></select><button id="closeMapBottom" type="button" class="primary">このマップで遊ぶ</button></div></div>
+<div id="helpModal" class="modal" hidden role="dialog" aria-modal="true" aria-labelledby="helpTitle"><div class="dialog"><div class="dialoghead"><h2 id="helpTitle">遊び方</h2><button id="closeHelp" class="xbtn" type="button">×</button></div><div class="helpstep"><span>1</span><div>盤面にある<b>自分の色の丸いライト</b>をタップして選びます。選んだライトには金色の輪がつきます。</div></div><div class="helpstep"><span>2</span><div>画面下の <b>↶ / ↷</b> で90度回転。光が届くマスが自分の陣地になります。<b>壁は光を遮ります。</b></div></div><div class="helpstep"><span>3</span><div>両方の光が届くマスは、より強く照らした側の陣地。ほぼ同じ明るさなら中立です。</div></div><div class="helpstep"><span>4</span><div>交互に<b>8手ずつ（全16手）</b>動かし、最後に多くのマスを取った側が勝ちです。</div></div><div class="legend"><span style="color:#7beafe">■ 青い陣地</span><span style="color:#ffc390">■ オレンジの陣地</span><span style="color:#ebedf2">▤ 壁・影</span></div><button id="closeHelpBottom" type="button" class="primary" style="margin-top:17px">ゲームにもどる</button></div></div>
+<script>
+(()=>{'use strict';
+const $=id=>document.getElementById(id),S=12,N=S*S,MAX=8,ALL=MAX*2,TILE=56;
+const DIRS=[[0,-1],[1,0],[0,1],[-1,0]],ARROWS=['▲','▶','▼','◀'];
+const MAPS=[
+ {name:'ひかりの庭',detail:'初級 · 開けた広場と小さな石柱',blocks:[[5,2],[6,2],[5,3],[6,8],[5,9],[6,9],[4,5],[7,6],[4,7],[7,4]]},
+ {name:'影の回廊',detail:'中級 · 回り道と長い影が勝負',blocks:[[4,1],[7,1],[4,2],[7,2],[4,3],[7,3],[5,4],[6,4],[2,6],[3,6],[8,6],[9,6],[5,7],[6,7],[4,8],[7,8],[4,9],[7,9],[4,10],[7,10]]},
+ {name:'石柱の迷路',detail:'上級 · 複雑な壁が光を分断する',blocks:[[4,1],[7,1],[4,2],[7,2],[5,3],[6,3],[3,4],[8,4],[4,5],[7,5],[5,5],[6,6],[4,6],[7,6],[3,7],[8,7],[5,8],[6,8],[4,9],[7,9],[4,10],[7,10]]}
+];
+const START=[
+ {x:1,y:1,t:0,d:0},{x:1,y:4,t:0,d:0},{x:1,y:7,t:0,d:2},{x:1,y:10,t:0,d:2},
+ {x:10,y:1,t:1,d:0},{x:10,y:4,t:1,d:0},{x:10,y:7,t:1,d:2},{x:10,y:10,t:1,d:2}
+];
+let map=0,pendingMap=0,mode='cpu',difficulty='normal',turn=0,selected=-1,lamps=[],walls=new Set(),masks=[],result=null,ended=false,cpuThinking=false,timer=null,settingsOpen=false,sfx=true,ctxAudio=null,best={};
+const canvas=$('board'),ctx=canvas.getContext('2d');
+try{const p=JSON.parse(localStorage.getItem('kagetori_v1')||'{}');if(p.map>=0&&p.map<3)map=p.map;if(['easy','normal','hard'].includes(p.difficulty))difficulty=p.difficulty;if(p.mode==='two')mode='two';if(p.best)best=p.best;if(p.sfx===false)sfx=false}catch(_){}
+function save(){try{localStorage.setItem('kagetori_v1',JSON.stringify({map,mode,difficulty,best,sfx}))}catch(_){}}
+function idx(x,y){return y*S+x}function xy(i){return [i%S,Math.floor(i/S)]}
+function maskLine(x0,y0,x1,y1){ // exclude source and target; any intervening wall blocks the light
+ const dx=Math.abs(x1-x0),dy=Math.abs(y1-y0),sx=x0<x1?1:-1,sy=y0<y1?1:-1;
+ let x=x0,y=y0,err=dx-dy;
+ while(x!==x1||y!==y1){const e2=2*err;if(e2>-dy){err-=dy;x+=sx}if(e2<dx){err+=dx;y+=sy}if(x===x1&&y===y1)break;if(walls.has(idx(x,y)))return false}
+ return true;
+}
+function maskFor(i,dir){const lamp=lamps[i],d=DIRS[dir],a=new Float32Array(N);for(let y=0;y<S;y++)for(let x=0;x<S;x++){
+ const cell=idx(x,y);if(walls.has(cell))continue;
+ const vx=x-lamp.x,vy=y-lamp.y,forward=vx*d[0]+vy*d[1],lateral=Math.abs(vx*d[1]-vy*d[0]);
+ if(forward<0||lateral>forward*.72+.4)continue;
+ const dist=Math.hypot(vx,vy);if(dist>10.5)continue;
+ if(dist>0&&!maskLine(lamp.x,lamp.y,x,y))continue;
+ a[cell]=1.9/(1+.18*dist+.028*dist*dist);
+ }return a;
+}
+function buildMasks(){masks=lamps.map((_,i)=>DIRS.map((_,d)=>maskFor(i,d)))}
+function scores(ds){const blue=new Float32Array(N),orange=new Float32Array(N),owner=new Int8Array(N);let b=0,o=0,c=0;
+ for(let i=0;i<lamps.length;i++){const col=lamps[i].t===0?blue:orange,mask=masks[i][ds[i]];for(let k=0;k<N;k++)col[k]+=mask[k]}
+ for(let k=0;k<N;k++){if(walls.has(k))continue;const z=blue[k]-orange[k];if(z>.12){owner[k]=1;b++}else if(z<-.12){owner[k]=2;o++}else if(blue[k]>.09||orange[k]>.09){owner[k]=3;c++}}
+ return {blue,orange,owner,b,o,c};
+}
+function getDirs(){return lamps.map(x=>x.d)}
+function evaluate(dirs){const s=scores(dirs);return s}
+function playTone(freq=420,len=.09,gain=.035){if(!sfx)return;try{const A=window.AudioContext||window.webkitAudioContext;if(!A)return;if(!ctxAudio)ctxAudio=new A();if(ctxAudio.state==='suspended')ctxAudio.resume().catch(()=>{});const osc=ctxAudio.createOscillator(),vol=ctxAudio.createGain(),t=ctxAudio.currentTime;osc.type='sine';osc.frequency.setValueAtTime(freq,t);osc.frequency.exponentialRampToValueAtTime(freq*.83,t+len);vol.gain.setValueAtTime(gain,t);vol.gain.exponentialRampToValueAtTime(.0001,t+len);osc.connect(vol);vol.connect(ctxAudio.destination);osc.start(t);osc.stop(t+len+.005)}catch(_){}}
+function reset(){if(timer){clearTimeout(timer);timer=null}lamps=START.map(l=>({...l}));walls=new Set(MAPS[map].blocks.map(([x,y])=>idx(x,y)));buildMasks();turn=0;selected=-1;ended=false;cpuThinking=false;result=evaluate(getDirs());$('winCover').hidden=true;closeMap();update();draw();save()}
+function side(){return turn%2}function humanTurn(){return !ended&&!cpuThinking&&(mode==='two'||side()===0)}
+function update(){const s=result;$('blueScore').textContent=s.b;$('orangeScore').textContent=s.o;$('turnCount').textContent=turn+'/'+ALL;
+ $('blueTitle').textContent=mode==='cpu'?'あなた':'1P';$('orangeTitle').textContent=mode==='cpu'?'CPU':'2P';
+ $('bluePanel').classList.toggle('active',!ended&&side()===0);$('orangePanel').classList.toggle('active',!ended&&side()===1);
+ $('modeCpu').classList.toggle('active',mode==='cpu');$('modeTwo').classList.toggle('active',mode==='two');$('mapButton').textContent='▦ MAP '+(map+1)+' ▾';$('sound').textContent=sfx?'♪ 音 ON':'♪ 音 OFF';
+ const msg=$('turnMsg');msg.className='turnmsg'+(ended?' finished':side()===1?' orange':'');
+ const dot=msg.querySelector('.dot');dot.classList.toggle('pulse',!ended);
+ let text='';if(ended)text='対局終了！　おつかれさまでした';else if(cpuThinking)text='CPUが考えています…';else if(selected<0)text=side()===0?'青いライトをタップして選ぼう！':'オレンジのライトをタップして選ぼう！';else text='ライト '+(selected%4+1)+'：左か右へ90°回そう！';
+ $('turnText').textContent=text;const enabled=humanTurn()&&selected>=0&&lamps[selected].t===side();$('ccw').disabled=!enabled;$('cw').disabled=!enabled;
+}
+function selectLamp(i){if(!humanTurn()||i<0||i>=lamps.length||lamps[i].t!==side())return;selected=i;playTone(440,.04,.017);update();draw()}
+function rotate(i,delta){if(ended||cpuThinking||lamps[i].t!==side())return false;
+ const angle=(lamps[i].d+delta+4)%4;lamps[i].d=angle;
+ turn++;selected=-1;result=evaluate(getDirs());playTone(lamps[i].t===0?620:360,.115,.04);update();draw();
+ if(turn>=ALL)finish();else if(mode==='cpu'&&side()===1){cpuThinking=true;update();timer=setTimeout(cpuMove,510)}
+ return true;
+}
+function doRotation(d){if(!humanTurn()||selected<0)return;rotate(selected,d)}
+function options(t,base){const candidates=[];for(let i=0;i<lamps.length;i++)if(lamps[i].t===t)for(const delta of [-1,1]){const dirs=base.slice();dirs[i]=(dirs[i]+delta+4)%4;const ss=evaluate(dirs);candidates.push({i,delta,dirs,s:ss})}return candidates}
+function advantage(s){return s.o-s.b + .003*(s.o+s.b)}
+function cpuChoice(){const base=getDirs(),candidates=options(1,base);let bestScore=-Infinity,pick=candidates[0];
+ for(const c of candidates){let val=advantage(c.s);
+  if(difficulty==='hard'&&turn<ALL-1){const reply=options(0,c.dirs);let danger=Infinity;for(const q of reply)danger=Math.min(danger,advantage(q.s));val=.44*val+.56*danger}
+  if(difficulty==='easy')val+=Math.random()*5.6;else if(difficulty==='normal')val+=Math.random()*.55;else val+=Math.random()*.02;
+  if(val>bestScore){bestScore=val;pick=c}
+ }return {i:pick.i,delta:pick.delta};
+}
+function cpuMove(){timer=null;if(ended||mode!=='cpu'||side()!==1)return;cpuThinking=false;const p=cpuChoice();rotate(p.i,p.delta)}
+function finish(){ended=true;cpuThinking=false;const {b,o}=result;const win=b>o?'BLUE WIN!':o>b?'ORANGE WIN!':'DRAW GAME';$('winTitle').textContent=win;$('winMedal').textContent=b===o?'🤝':b>o?'🏆':'🌟';const human=mode==='cpu';let verdict=b===o?'引き分け！':b>o?(human?'あなたの勝ち！':'青の勝ち！'):(human?'CPUの勝ち！':'オレンジの勝ち！');$('winText').textContent=verdict+'\n青 '+b+' マス － オレンジ '+o+' マス';$('winText').style.whiteSpace='pre-line';$('winCover').hidden=false;
+ const key=map+':'+mode+':'+difficulty;if(mode==='cpu'&&b>o)best[key]=(best[key]||0)+1;save();update();draw();[520,650,780].forEach((f,i)=>setTimeout(()=>playTone(f,.15,.03),i*120));
+}
+function pickAt(e){if(!humanTurn())return;const rect=canvas.getBoundingClientRect(),x=Math.floor((e.clientX-rect.left)/rect.width*S),y=Math.floor((e.clientY-rect.top)/rect.height*S);if(x<0||y<0||x>=S||y>=S)return;const i=lamps.findIndex(l=>l.x===x&&l.y===y&&l.t===side());if(i>=0)selectLamp(i);else{selected=-1;update();draw()}}
+function roundRect(x,y,w,h,r,fill,stroke){ctx.beginPath();ctx.roundRect(x,y,w,h,r);if(fill){ctx.fillStyle=fill;ctx.fill()}if(stroke){ctx.lineWidth=1.4;ctx.strokeStyle=stroke;ctx.stroke()}}
+function draw(){const dirs=getDirs();ctx.clearRect(0,0,672,672);ctx.fillStyle='#0b1d31';ctx.fillRect(0,0,672,672);
+ const b=result.blue,o=result.orange,owner=result.owner;
+ for(let y=0;y<S;y++)for(let x=0;x<S;x++){
+  const k=idx(x,y),X=x*TILE,Y=y*TILE;if(walls.has(k))continue;
+  const light=Math.max(b[k],o[k]),strength=Math.min(.5,light*.1);let tile='#152d44';if(owner[k]===1)tile='#176680';else if(owner[k]===2)tile='#92562f';else if(owner[k]===3)tile='#535269';
+  ctx.fillStyle=tile;ctx.fillRect(X+.7,Y+.7,TILE-1.4,TILE-1.4);
+  if(light>.1){ctx.fillStyle=owner[k]===1?`rgba(105,238,255,${Math.min(.23,light*.075)})`:owner[k]===2?`rgba(255,211,137,${Math.min(.21,light*.074)})`:'rgba(211,215,247,.11)';ctx.fillRect(X+3,Y+3,TILE-6,TILE-6)}
+  ctx.strokeStyle='#6d91a02c';ctx.strokeRect(X+.5,Y+.5,TILE-1,TILE-1);
+  if(owner[k]===3){ctx.save();ctx.setLineDash([3,5]);ctx.strokeStyle='#c7d4df80';ctx.lineWidth=1;ctx.strokeRect(X+8,Y+8,TILE-16,TILE-16);ctx.restore()}
+ }
+ // Wall blocks cast visible, hard-edged shadows by occluding every target cell.
+ for(let y=0;y<S;y++)for(let x=0;x<S;x++){const k=idx(x,y);if(!walls.has(k))continue;const X=x*TILE,Y=y*TILE;
+  ctx.fillStyle='#090f1c';ctx.fillRect(X,Y,TILE,TILE);
+  roundRect(X+3,Y+3,TILE-6,TILE-7,6,'#465d6b','#193448');
+  roundRect(X+6,Y+5,TILE-12,9,3,'#849bab');
+  ctx.strokeStyle='#1d3648';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(X+6,Y+29);ctx.lineTo(X+TILE-6,Y+29);ctx.moveTo(X+TILE*.5,Y+29);ctx.lineTo(X+TILE*.5,Y+TILE-4);ctx.stroke();
+ }
+ // Outline the selected light's current footprint, if any, to clarify selection.
+ if(selected>=0&&humanTurn()){
+  const mask=masks[selected][dirs[selected]];
+  ctx.save();ctx.strokeStyle='#ffe49e9c';ctx.lineWidth=2;ctx.setLineDash([3,5]);for(let k=0;k<N;k++)if(mask[k]>.05){const [x,y]=xy(k);ctx.strokeRect(x*TILE+7,y*TILE+7,TILE-14,TILE-14)}ctx.restore();
+ }
+ for(let i=0;i<lamps.length;i++){
+  const l=lamps[i],X=l.x*TILE+TILE/2,Y=l.y*TILE+TILE/2,sel=selected===i&&!ended,color=l.t===0?'#66eaff':'#ffbb78';ctx.save();ctx.translate(X,Y);
+  ctx.shadowColor=color;ctx.shadowBlur=16;ctx.fillStyle=l.t===0?'#146783':'#9e512c';ctx.beginPath();ctx.arc(0,0,20,0,Math.PI*2);ctx.fill();ctx.shadowBlur=0;
+  ctx.lineWidth=sel?4:2.8;ctx.strokeStyle=sel?'#ffe895':l.t===0?'#b3faff':'#ffdda8';ctx.beginPath();ctx.arc(0,0,sel?24:20,0,Math.PI*2);ctx.stroke();
+  ctx.fillStyle='#edfaff';ctx.font='950 13px system-ui';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(String(i%4+1),0,2);
+  ctx.fillStyle=color;ctx.beginPath();const a=l.d*Math.PI/2-Math.PI/2;ctx.moveTo(Math.cos(a)*30,Math.sin(a)*30);ctx.lineTo(Math.cos(a+2.45)*12,Math.sin(a+2.45)*12);ctx.lineTo(Math.cos(a-2.45)*12,Math.sin(a-2.45)*12);ctx.closePath();ctx.fill();
+  if(sel){ctx.strokeStyle='#ffe5a6';ctx.lineWidth=1.8;ctx.setLineDash([4,4]);ctx.beginPath();ctx.arc(0,0,27,0,Math.PI*2);ctx.stroke()}
+  ctx.restore();
+ }
+ // Edge strip and understated frame.
+ ctx.strokeStyle='#c7d6de55';ctx.lineWidth=3;ctx.strokeRect(1.5,1.5,669,669);
+}
+function closeMap(){settingsOpen=false;pendingMap=map;$('mapModal').hidden=true}function openMap(){if(cpuThinking)return;settingsOpen=true;pendingMap=map;$('mapModal').hidden=false;$('difficulty').value=difficulty;$('difficultyLabel').hidden=mode==='two';$('difficulty').hidden=mode==='two';const options=$('mapOptions');options.replaceChildren();MAPS.forEach((m,i)=>{const b=document.createElement('button');b.type='button';b.className='mapoption'+(pendingMap===i?' active':'');b.innerHTML='<span class="no">0'+(i+1)+'</span><span><strong>'+m.name+'</strong><small>'+m.detail+'</small></span>';b.addEventListener('click',()=>{pendingMap=i;options.querySelectorAll('.mapoption').forEach((el,k)=>el.classList.toggle('active',k===i))});options.appendChild(b)})}
+function toggleMode(next){if(mode===next)return;if(cpuThinking)return;mode=next;reset()}
+$('modeCpu').addEventListener('click',()=>toggleMode('cpu'));$('modeTwo').addEventListener('click',()=>toggleMode('two'));
+$('ccw').addEventListener('click',()=>doRotation(-1));$('cw').addEventListener('click',()=>doRotation(1));canvas.addEventListener('pointerdown',pickAt);
+$('restart').addEventListener('click',()=>reset());$('again').addEventListener('click',()=>reset());$('mapButton').addEventListener('click',openMap);$('changeMapWin').addEventListener('click',openMap);
+$('closeMap').addEventListener('click',closeMap);$('closeMapBottom').addEventListener('click',()=>{map=pendingMap;difficulty=$('difficulty').value;reset()});$('mapModal').addEventListener('click',e=>{if(e.target===$('mapModal'))closeMap()});
+$('help').addEventListener('click',()=>{$('helpModal').hidden=false});$('closeHelp').addEventListener('click',()=>{$('helpModal').hidden=true});$('closeHelpBottom').addEventListener('click',()=>{$('helpModal').hidden=true});$('helpModal').addEventListener('click',e=>{if(e.target===$('helpModal'))$('helpModal').hidden=true});
+$('sound').addEventListener('click',()=>{sfx=!sfx;save();update();playTone(520,.08,.025)});
+window.addEventListener('keydown',e=>{if(e.key==='Escape'){$('helpModal').hidden=true;closeMap();return}if($('mapModal').hidden&&$('helpModal').hidden){if(e.key==='ArrowLeft'){e.preventDefault();doRotation(-1)}else if(e.key==='ArrowRight'){e.preventDefault();doRotation(1)}else if(e.key>='1'&&e.key<='4'){selectLamp(side()*4+Number(e.key)-1)}}});
+// Console test API, available only when ?test is set.
+if(new URLSearchParams(location.search).has('test'))window.__kageTest={
+ state:()=>({map,mode,difficulty,turn,side:side(),selected,ended,cpuThinking,b:result.b,o:result.o,lamps:lamps.map(l=>({...l})),walls:[...walls],owners:[...result.owner]}),
+ select:selectLamp,turnLamp:(i,d)=>{selectLamp(i);doRotation(d)},rotate,reset,scores,evaluate,cpuChoice,changeMode:toggleMode,changeMap:i=>{map=i;reset()},setDifficulty:d=>{difficulty=d;save()},getMasks:()=>masks,finish
+};
+$('difficulty').value=difficulty;reset();
+})();
+</script>
+</body>
+</html>
