@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
 <meta name="theme-color" content="#071326">
-<title>SKY BLAZE v1.0 — 縦スクロールシューティング</title>
+<title>SKY BLAZE v1.1 — 縦スクロールシューティング</title>
 <style>
 :root{color-scheme:dark;--navy:#091326;--white:#f0f7ff;--muted:#a9c1dd;--gold:#ffe496;--cyan:#74e8fa;--edge:#395170}
 *{box-sizing:border-box}html{overscroll-behavior:none}body{margin:0;min-height:100dvh;background:radial-gradient(ellipse at 50% -12%,#27496a 0,#101f3d 44%,#071022 88%);font-family:system-ui,-apple-system,"Hiragino Kaku Gothic ProN","Noto Sans JP",sans-serif;color:var(--white);-webkit-tap-highlight-color:transparent}
@@ -135,7 +135,7 @@ function tick(dt){if(mode!=='playing')return;dt=clamp(dt,0,.05);stageElapsed+=dt
  }
  for(let i=world.shots.length-1;i>=0;i--){const s=world.shots[i];s.x+=s.vx*dt;s.y+=s.vy*dt;s.age+=dt;if(s.y<-15||s.x<-20||s.x>W+20){world.shots.splice(i,1);continue}let hit=false;
  for(let j=world.enemies.length-1;j>=0;j--){const e=world.enemies[j];if(dist(e,s)<e.r+s.r){e.hp-=s.damage;hit=true;explode(s.x,s.y,'#ffedb1',2,.5);if(e.hp<=0)removeEnemy(j);break}}
- if(!hit&&world.boss&&Math.hypot(s.x-world.boss.x,(s.y-world.boss.y)*.82)<world.boss.r+s.r*.5){world.boss.hp-=s.damage;hit=true;ship.flash=.045;if(Math.random()<.12)explode(s.x,s.y,'#fff1ba',3,.7);if(world.boss.hp<=0)bossDestroyed()}
+ if(!hit&&world.boss&&Math.hypot(s.x-world.boss.x,(s.y-world.boss.y)*.82)<world.boss.r+s.r*.5){world.boss.hp-=s.damage;hit=true;ship.flash=.045;if(Math.random()<.12)explode(s.x,s.y,'#fff1ba',3,.7);if(world.boss.hp<=0){bossDestroyed();return}}
  if(hit)world.shots.splice(i,1)
  }
  for(let i=world.enemyShots.length-1;i>=0;i--){const s=world.enemyShots[i];s.x+=s.vx*dt;s.y+=s.vy*dt;s.age+=dt;if(s.x<-17||s.x>W+17||s.y<-20||s.y>H+20){world.enemyShots.splice(i,1);continue}if(ship.inv<=0&&dist(s,ship)<ship.r+s.r-3){world.enemyShots.splice(i,1);takeHit()}}
