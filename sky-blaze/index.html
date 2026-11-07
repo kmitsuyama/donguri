@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
 <meta name="theme-color" content="#071326">
-<title>SKY BLAZE v1.6 — 縦スクロールシューティング</title>
+<title>SKY BLAZE v1.6.1 — 縦スクロールシューティング</title>
 <style>
 :root{color-scheme:dark;--navy:#091326;--white:#f0f7ff;--muted:#a9c1dd;--gold:#ffe496;--cyan:#74e8fa;--edge:#395170}
 *{box-sizing:border-box}html{overscroll-behavior:none}body{margin:0;min-height:100dvh;background:radial-gradient(ellipse at 50% -12%,#27496a 0,#101f3d 44%,#071022 88%);font-family:system-ui,-apple-system,"Hiragino Kaku Gothic ProN","Noto Sans JP",sans-serif;color:var(--white);-webkit-tap-highlight-color:transparent}
@@ -29,6 +29,9 @@ header{width:100%;display:flex;align-items:center;justify-content:space-between;
 @media(max-height:640px){.overlay{padding:8px}.eyebrow{font-size:9px;letter-spacing:.18em}.game-logo{font-size:clamp(29px,9vw,37px);margin:6px 0 0}.panel h2{font-size:19px;margin:6px 0}.panel p{font-size:11px;line-height:1.6;margin:6px auto}.panel .copy{display:none}.cta{font-size:14px;min-height:40px;min-width:165px;padding:8px 13px;margin-top:7px}.cta.secondary{min-height:36px;margin-top:6px}.panel .tip{font-size:9px}}
 @media(max-height:600px){.brand b{font-size:20px}.brand small{display:none}.screen-shell{width:min(100%,402px,calc((100dvh - 198px)*.769))}.pad{height:106.6px;min-height:106.6px}.pad-title{font-size:10px;top:5px}.pad-hint{font-size:10px;bottom:4px}.footer{display:none}}
 @media(max-width:345px){.brand small{display:none}.stat strong{font-size:14px}.tiny-button{padding:6px 3px;min-width:43px}.app{padding-left:8px;padding-right:8px}}
+
+/* touch-guard-v1: avoid iOS text selection and native callouts on controls */
+.pad,.pad *{-webkit-user-select:none!important;user-select:none!important;-webkit-touch-callout:none!important;-webkit-user-drag:none;touch-action:none;}
 </style>
 </head>
 <body>
@@ -54,6 +57,10 @@ header{width:100%;display:flex;align-items:center;justify-content:space-between;
  <div class="footer">全4ステージ　•　<b>1〜3面 中ボス</b>　•　<b>4面 ラスボス</b>　•　ゲーム内の攻撃は完全自動</div>
 </main>
 <script>
+// touch-guard-v1: suppress native text selection/drag/context menu for .pad
+document.querySelectorAll('.pad').forEach(control=>{
+ for(const type of ['selectstart','dragstart','contextmenu'])control.addEventListener(type,event=>event.preventDefault());
+});
 (()=>{'use strict';
 const W=400,H=520,canvas=document.getElementById('game'),ctx=canvas.getContext('2d'),$=id=>document.getElementById(id);
 const STAGES=[
