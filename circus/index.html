@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
 <meta name="theme-color" content="#17162d">
-<title>CIRCUS! — バルーン・ショー v1.3</title>
+<title>CIRCUS! — バルーン・ショー v1.2.1</title>
 <style>
 :root { color-scheme:dark; --bg:#17162d; --cream:#fff2d8; --gold:#ffd87b; --pink:#f25c6f; --stroke:#413a57; }
 * { box-sizing:border-box; }
@@ -37,6 +37,9 @@ canvas { width:100%; height:auto; display:block; border-radius:8px; background:#
 .foot b { color:#ffe19e; }
 @media (max-width:370px) { .brand small { font-size:10px } .tag { display:none } .action { padding:0 10px; } .hudbox .value { font-size:17px; } }
 @media (min-width:700px) { .app { padding-top:25px; } }
+
+/* touch-guard-v1: avoid iOS text selection and native callouts on controls */
+.pad,.pad *{-webkit-user-select:none!important;user-select:none!important;-webkit-touch-callout:none!important;-webkit-user-drag:none;touch-action:none;}
 </style>
 </head>
 <body>
@@ -53,9 +56,13 @@ canvas { width:100%; height:auto; display:block; border-radius:8px; background:#
     <div id="pad" class="pad" role="slider" aria-label="シーソーの位置" aria-valuemin="0" aria-valuemax="100" aria-valuenow="50" tabindex="0"><div id="knob" class="knob"></div><span class="pad-label">⇦ 横にスライド ⇨</span></div>
     <button id="sound" class="action secondary" type="button" aria-label="効果音のオン・オフ">♪ ON</button>
   </div>
-  <p class="foot"><b>操作：</b>画面を左右にドラッグ、または下のバーをスライド。<br>落ちてくるピエロを<b>シーソーの高い側</b>で受け止めよう！<br>端の風船は、シーソーを左右に寄せて狙おう。ジャンプ中も方向を調整できます。</p>
+  <p class="foot"><b>操作：</b>画面を左右にドラッグ、または下のバーをスライド。<br>落ちてくるピエロを<b>シーソーの高い側</b>で受け止めよう！<br>端の風船は、飛ばす側のシーソーを端に寄せると狙いやすくなります。</p>
 </main>
 <script>
+// touch-guard-v1: suppress native text selection/drag/context menu for .pad
+document.querySelectorAll('.pad').forEach(control=>{
+ for(const type of ['selectstart','dragstart','contextmenu'])control.addEventListener(type,event=>event.preventDefault());
+});
 (() => {
 'use strict';
 const canvas = document.getElementById('game');
@@ -64,11 +71,7 @@ const $ = id => document.getElementById(id);
 const W=420,H=600, GROUND=550, BOARDY=505, HALF=58;
 const LO=73,HI=347, CATCH_RADIUS=47, FLIGHT_SPEED=.68;
 // Edge balloons are slightly inset with a gentler sway, for fairer corner shots.
-const EDGE_INSET=9, EDGE_SWAY=9, EDGE_HIT_RADIUS=30;
-// Moving the board to either outside lane gives a deliberate side shot,
-// regardless of which clown happens to be launched. Follow the lane on ascent,
-// then bring the clown back into the receiving tip's possible catch range.
-const AIM_LEFT=151, AIM_RIGHT=269, EDGE_FOLLOW=.18, EDGE_RETURN=.17;
+const EDGE_INSET=9, EDGE_SWAY=9, EDGE_HIT_RADIUS=28;
 const balloonSpecs = [
  {y:108,color:'#74bcec',light:'#c3ecff',shade:'#3172ae',points:100,bonus:1000,speed:.68},
  {y:151,color:'#82db8b',light:'#e2ffd2',shade:'#328f66',points:50,bonus:500,speed:.53},
@@ -148,14 +151,6 @@ window.addEventListener('keyup',e=>{if((e.key==='ArrowLeft'&&holdDir===-1)||(e.k
 pad.addEventListener('keydown',e=>{if(e.key==='ArrowLeft'||e.key==='ArrowRight'){e.stopPropagation();e.preventDefault();targetX=clamp(targetX+(e.key==='ArrowLeft'?-25:25),LO,HI);}});
 document.addEventListener('visibilitychange',()=>{if(document.hidden&&mode==='running'){mode='paused';hud();}});
 function boardEnd(side){return {x:boardX+side*HALF,y:BOARDY+side*waitingSide*14};}
-function edgeSideAt(x){return x<=AIM_LEFT?-1:x>=AIM_RIGHT?1:0;}
-function edgeBalloonX(side){
- const col=side<0?0:8;
- const ball=balls.filter(b=>b.alive&&b.i===col).sort((a,b)=>b.row-a.row)[0];
- if(ball)return balloonPosition(ball).x;
- // All three outer balloons have been popped. Hold the same outer lane.
- return side<0?47+EDGE_INSET:47+8*40-EDGE_INSET;
-}
 function balloonPosition(b){
  const row=b.row,s=balloonSpecs[row];
  return {x:47+b.i*40+(b.i===0?EDGE_INSET:b.i===8?-EDGE_INSET:0)
@@ -181,9 +176,38 @@ function popBall(b){
   sound('bonus');
  }
 }
-// Side aim is set by the player's seesaw position, not the direction of
-// the seated clown. The previous version only assisted one launch direction.
-function edgeShotSide(){return edgeSideAt(boardX);}
+// Number of 60fps frames until the clown first reaches a balloon's height.
+// This mirrors the actual bounce physics, including the ceiling limit.
+function ascentFrames(y0,vy0,goalY){
+ let y=y0,vy=vy0;
+ for(let f=1;f<120;f++){
+  vy+=.266*FLIGHT_SPEED;y+=vy*FLIGHT_SPEED;
+  if(y<=goalY)return f;
+  if(y<65){y=65;vy=Math.abs(vy)*.63;}
+ }
+ return 50;
+}
+function aimForEdge(launch,upward,side,normalVX){
+ // Only assist when the player has actually brought the launching end
+ // close to the appropriate edge of the playfield.
+ const origin=clamp(launch.x,32,W-32);
+ if(side===-1 ? origin>135 : origin<285)return normalVX;
+ const col=side===-1?0:8;
+ const options=balls.filter(b=>b.alive&&b.i===col).sort((a,b)=>a.row-b.row);
+ for(const b of options){
+  const f=ascentFrames(launch.y-21,upward,balloonSpecs[b.row].y);
+  const s=balloonSpecs[b.row];
+  const balloonX=47+40*col+(col===0?EDGE_INSET:-EDGE_INSET)
+    +Math.sin((seconds+f/60)*s.speed+b.row*2.1)*EDGE_SWAY;
+  const vx=(balloonX-origin)/(f*FLIGHT_SPEED);
+  if(Math.abs(vx)>2.05)continue; // A distant balloon must still be earned.
+  // Avoid outward wall bounces that would make a predicted aim unreliable.
+  const reach=origin+vx*f*FLIGHT_SPEED;
+  if(reach<34||reach>W-34)continue;
+  return vx;
+ }
+ return normalVX;
+}
 function bounce(offset){
  const launchingSide=waitingSide;
  const launch=boardEnd(launchingSide);
@@ -195,13 +219,8 @@ function bounce(offset){
  const desiredX=clamp(launch.x-launchingSide*72+offset*.35+(Math.random()-.5)*25,landingMin,landingMax);
  const normalVX=clamp((desiredX-launch.x)/114,-1.45,1.45);
  const upward=-(15.25+clamp(1-Math.abs(offset)/36,0,1)*.75);
- const edgeSide=edgeShotSide();
- // A shot to either edge should work regardless of which seat is launching.
- // Preserve normal arcs when the seesaw is near the center.
- const vx=edgeSide?normalVX*.25:normalVX;
- flying={x:launch.x,y:launch.y-21,vx,vy:upward,id:nextId,angle:0,
-   edgeSide,launchSide:launchingSide};
- if(edgeSide)label(W/2,418,edgeSide<0?'← 左端をねらう':'右端をねらう →','#ffe3a3',true);
+ const vx=aimForEdge(launch,upward,launchingSide,normalVX);
+ flying={x:launch.x,y:launch.y-21,vx,vy:upward,id:nextId,angle:0};
  waitingSide=-waitingSide;catchCount++;
  burst(launch.x,launch.y-10,'#ffedb1',8,2);invulnerable=13;
  if(catchCount%5===0)label(W/2,310,'NICE CATCH!','#b7f6ff',true);
@@ -235,35 +254,6 @@ function update(d){
  // Only slow down the flight physics. The arc and maximum height stay familiar.
  const flightDt=dt*FLIGHT_SPEED;
  p.vy+=.266*flightDt;p.x+=p.vx*flightDt;p.y+=p.vy*flightDt;
- // Edge shot: guide the ascent through the outer balloons (all three rows).
- // Moving the board into an outer lane while airborne also enables steering,
- // so the player is not forced to aim only at the instant of a catch.
- if(p.vy<0 && p.y>125 && p.y<475 && edgeSideAt(boardX)!==0){
-   p.edgeSide=edgeSideAt(boardX);
-   p.launchSide??=-waitingSide;
- }
- if(p.edgeSide){
-   if(p.vy<0 || p.y<213){
-     const aim=edgeBalloonX(p.edgeSide);
-     p.x+=(aim-p.x)*Math.min(1,EDGE_FOLLOW*flightDt);
-   }else{
-     // After clearing the balloon rows, return to a place the raised tip
-     // can actually reach. It is impossible to catch an x=56 landing with
-     // the right tip: its leftmost x is LO+HALF (131).
-     const side=p.launchSide;
-     const lowest=side===1?LO+HALF:LO-HALF;
-     const highest=side===1?HI+HALF:HI-HALF;
-     // Choose a reachable landing lane as the descent begins, then lock it.
-     // This keeps the following catch possible without automatically chasing
-     // every player movement all the way to the floor.
-     if(p.returnAnchor==null){
-       const candidate=clamp(boardX+side*HALF,lowest+9,highest-9);
-       p.returnAnchor=candidate;
-     }
-     p.x+=(p.returnAnchor-p.x)*Math.min(1,EDGE_RETURN*flightDt);
-   }
-   p.vx*=Math.pow(.80,flightDt);
- }
  p.angle=clamp(p.vx*.035+p.vy*.007,-.27,.27);
  if(p.x<32){p.x=32;p.vx=Math.abs(p.vx)*.97;}
  if(p.x>W-32){p.x=W-32;p.vx=-Math.abs(p.vx)*.97;}
@@ -364,15 +354,6 @@ function drawSeesaw(){
  const free=boardEnd(-waitingSide);
  ctx.save();ctx.globalAlpha=.65+.25*Math.sin(seconds*7);ctx.strokeStyle='#fff7b4';ctx.lineWidth=2.5;
  ctx.beginPath();ctx.ellipse(free.x,free.y-25,25,9,0,0,Math.PI*2);ctx.stroke();ctx.restore();
- // Show clearly which outer lane will receive an assisted jump.
- const aim=edgeSideAt(boardX);
- if(aim){
-   ctx.save();ctx.textAlign='center';ctx.font='900 14px system-ui,sans-serif';
-   ctx.strokeStyle='#1c2336';ctx.lineWidth=4;ctx.fillStyle='#fff2ac';
-   const cue=aim<0?'← 左の風船をねらう':'右の風船をねらう →';
-   ctx.strokeText(cue,clamp(boardX,104,316),451);
-   ctx.fillText(cue,clamp(boardX,104,316),451);ctx.restore();
- }
  const seated=boardEnd(waitingSide);
  const seatedId=flying?1-flying.id:1;
  clown(seated.x,seated.y-23,seatedId,waitingSide*.10,.84);
