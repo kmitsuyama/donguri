@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
 <meta name="theme-color" content="#122b34">
-<title>倉庫番 — SOKOBAN レトロ・パズル</title>
+<title>倉庫番 v1.0.1 — SOKOBAN レトロ・パズル</title>
 <style>
 :root{color-scheme:dark;--bg:#0b202a;--cream:#fff1c9;--muted:#b6ced1;--gold:#f8d783;--teal:#8ef5d3;--red:#ffafab}
 *{box-sizing:border-box}
@@ -58,6 +58,9 @@ canvas{width:100%;height:auto;aspect-ratio:1;display:block;background:#c6ad85;bo
 @media(max-height:640px){.board-wrap{width:min(100%,440px,calc(100dvh - 229px))}.pad{grid-template-rows:repeat(2,44px)}.tool{min-height:37px}.instructions{display:none}.progress{margin-top:3px}}
 @media(max-width:340px){.edition{display:none}.tools{gap:5px}.tool{font-size:12px;padding:5px 3px}.pad{grid-template-rows:repeat(2,51px)}}
 @media(min-width:720px){.app{padding-top:20px}.board-wrap{width:min(100%,420px)}.pad{grid-template-rows:repeat(2,57px)}}
+
+/* touch-guard-v1: avoid iOS text selection and native callouts on controls */
+.pad,.pad *{-webkit-user-select:none!important;user-select:none!important;-webkit-touch-callout:none!important;-webkit-user-drag:none;touch-action:none;}
 </style>
 </head>
 <body>
@@ -91,6 +94,10 @@ canvas{width:100%;height:auto;aspect-ratio:1;display:block;background:#c6ad85;bo
  <div id="levelGrid" class="level-grid"></div><p class="dialognote">どの面からでも遊べます。クリア記録はこの端末に保存されます。</p></div>
 </div>
 <script>
+// touch-guard-v1: suppress native text selection/drag/context menu for .pad
+document.querySelectorAll('.pad').forEach(control=>{
+ for(const type of ['selectstart','dragstart','contextmenu'])control.addEventListener(type,event=>event.preventDefault());
+});
 (()=>{'use strict';
 const LEVELS=[["#######","#     #","#  #$ #","# #  .#","#@$   #","# .   #","#######"],["#######","#     #","#     #","#   #.#","# $ $+#","#     #","#######"],["#######","#  .  #","#     #","# .$# #","#   $@#","#     #","#######"],["#######","# .   #","#  #  #","#    .#","# $ $ #","#   @ #","#######"],["#######","#     #","# . # #","#. $# #","# $   #","# @   #","#######"],["#######","#   . #","# $ $@#","#  #  #","#    .#","#     #","#######"],["#######","#     #","# ..  #","#     #","#  $$ #","#  @  #","#######"],["#######","#     #","#  .  #","# $   #","#   $ #","#.  @ #","#######"],["#######","#     #","#  $@ #","# . $ #","#  #  #","#.    #","#######"],["#######","#.    #","#.#@$ #","# #$  #","#     #","#     #","#######"],["########","#      #","# #@$  #","#  #   #","#   # .#","# # $$.#","# .    #","########"],["########","#.     #","# @#$$ #","# $   .#","#   ## #","#   #  #","#.     #","########"],["########","#  .   #","#  .   #","# #  $ #","#    @.#","# # $$ #","#      #","########"],["########","#     .#","#    . #","# $ #  #","# *    #","#   $@ #","#      #","########"],["########","#     .#","#. #   #","#   ## #","# @$ . #","#  #$$ #","#      #","########"],["########","#   .  #","# $ #  #","#   #. #","#  $   #","#@$    #","#     .#","########"],["########","# @  . #","# $.## #","#   #  #","#  # $ #","# $ #  #","#  .   #","########"],["########","# .    #","# #    #","# @  $ #","# $#$  #","#     .#","#   .  #","########"],["########","# @    #","# $# $ #","#  #   #","#    # #","# $#   #","#  .. .#","########"],["########","# .    #","#      #","# .  # #","# .  $ #","#  $#$ #","#  @   #","########"],["#########","#.   .. #","#    #  #","# $#    #","# @$ $  #","#       #","# $     #","#     . #","#########"],["#########","#  .   .#","# . $ . #","#       #","# @$    #","#  $  # #","#   $ # #","#       #","#########"],["#########","#     . #","#   $.. #","#@$  #  #","#    $  #","#.#   # #","# # # $ #","#       #","#########"],["#########","#       #","# # # $ #","#     $ #","#. # #  #","# # $#  #","#  #@ * #","#.  .   #","#########"],["#########","#.  .   #","#     # #","#  ## $ #","#       #","#   $@# #","#   $ $ #","#.    . #","#########"],["#########","#      .#","#. $  #.#","# .#    #","#     $ #","# # $   #","#  $@ # #","#       #","#########"],["#########","#       #","#  $ $  #","#. #  $.#","# #@$   #","# ## #  #","#     # #","#.     .#","#########"],["#########","#   . . #","# *  .  #","#       #","#       #","#     # #","# $ $ $ #","# @     #","#########"],["#########","#       #","#* #  $ #","# $@$   #","#. ##   #","# ##  # #","# #     #","#.     .#","#########"],["#########","#     ..#","#   #   #","#    $. #","#  $ # .#","# $@#   #","#  $    #","#       #","#########"]];
 const canvas=document.getElementById('board'),ctx=canvas.getContext('2d'),$=id=>document.getElementById(id);
