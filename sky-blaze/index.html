@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
 <meta name="theme-color" content="#071326">
-<title>SKY BLAZE v1.5 — 縦スクロールシューティング</title>
+<title>SKY BLAZE v1.6 — 縦スクロールシューティング</title>
 <style>
 :root{color-scheme:dark;--navy:#091326;--white:#f0f7ff;--muted:#a9c1dd;--gold:#ffe496;--cyan:#74e8fa;--edge:#395170}
 *{box-sizing:border-box}html{overscroll-behavior:none}body{margin:0;min-height:100dvh;background:radial-gradient(ellipse at 50% -12%,#27496a 0,#101f3d 44%,#071022 88%);font-family:system-ui,-apple-system,"Hiragino Kaku Gothic ProN","Noto Sans JP",sans-serif;color:var(--white);-webkit-tap-highlight-color:transparent}
@@ -97,7 +97,7 @@ function enemyBullet(x,y,dx,dy,r=5,color='#ff9b90'){const speed=Math.hypot(dx,dy
 function shootAt(x,y,speed=110,spread=0,count=1,color='#ff9879'){const a=Math.atan2(ship.y-y,ship.x-x);for(let i=0;i<count;i++){const angle=a+(i-(count-1)/2)*spread;enemyBullet(x,y,Math.cos(angle)*speed,Math.sin(angle)*speed,4.5,color)}}
 function shootFan(x,y,count,speed,start,step,color='#ff9d8b'){for(let i=0;i<count;i++){const a=start+(i-(count-1)/2)*step;enemyBullet(x,y,Math.sin(a)*speed,Math.cos(a)*speed,5,color)}}
 function spawnBoss(){phase='boss';phaseClock=0;world.enemies=[];world.enemyShots=[];world.shots=[];world.items=[];// Increasing boss durability counters the higher shot count of upgraded weapons.
- const hp=[800,1700,3500,7000][stageIndex],radius=[40,44,47,65][stageIndex];world.boss={x:W/2,y:-70,r:radius,hp,maxHp:hp,age:0,fire:1.65,second:1.2,enter:true,spin:0,active:false};ship.inv=Math.max(ship.inv,1.0);toast(stageIndex===3?'⚠ FINAL BOSS APPROACHING':'⚠ WARNING — MID BOSS',2.4);tone(190,.27,'sawtooth',.035);vib(60);updateUI()}
+ const hp=[800,1700,3500,7000][stageIndex],radius=[40,44,47,65][stageIndex];world.boss={x:W/2,y:-70,r:radius,hp,maxHp:hp,age:0,fire:1.65,second:1.2,enter:true,motionAge:0,spin:0,active:false};ship.inv=Math.max(ship.inv,1.0);toast(stageIndex===3?'⚠ FINAL BOSS APPROACHING':'⚠ WARNING — MID BOSS',2.4);tone(190,.27,'sawtooth',.035);vib(60);updateUI()}
 function dropFrom(x,y){const roll=Math.random();if(roll<.09)world.items.push({x,y,type:'power',r:12,vy:70,age:0});else if(roll<.11)world.items.push({x,y,type:'heal',r:12,vy:70,age:0})}
 function removeEnemy(i){const e=world.enemies[i];if(!e)return;explode(e.x,e.y,e.type==='tank'?'#f7ae6d':'#84efff',e.type==='tank'?22:13);dropFrom(e.x,e.y);addScore(e.type==='tank'?350:e.type==='turret'?210:110);world.enemies.splice(i,1);tone(250,.055,'triangle',.018)}
 function takeHit(){if(ship.inv>0||phase==='clear'||phase==='intro')return;life--;ship.inv=2.3;shake=7;explode(ship.x,ship.y,'#84dffc',25,1.25);vib(80);tone(95,.28,'sawtooth',.04);weapon=Math.max(1,weapon-1);updateUI();if(life<=0){mode='gameover';save();panel('MISSION FAILED','GAME<br>OVER','作戦失敗','到達ステージ：'+(stageIndex+1)+' ／ 4<br>獲得スコア：'+String(score).padStart(6,'0'),'↻ もう一度プレイ',null,'ステージごとのボス攻撃を見極めて再挑戦！')}}
@@ -115,7 +115,7 @@ function tick(dt){if(mode!=='playing')return;dt=clamp(dt,0,.05);stageElapsed+=dt
  if(phase==='clear'){phaseClock+=dt;if(phaseClock>2.6)stageFinished();return}
  shotClock-=dt;if(shotClock<=0){fire();shotClock+=.135;if(shotClock<=0)shotClock=.135}
  if(phase==='waves'){waveClock+=dt;waveGap-=dt;if(waveGap<=0){spawnWave()}if(waveClock>=STAGES[stageIndex].dur){spawnBoss()}}
- const b=world.boss;if(b){b.age+=dt;b.spin+=dt;if(b.enter){b.y=Math.min(b.y+90*dt,94);if(b.y>=94)b.enter=false}else{b.x=W/2+Math.sin(b.age*.9)*(stageIndex===3?90:105);b.y=93+Math.sin(b.age*.65)*12;b.fire-=dt;b.second-=dt;const second=b.hp<b.maxHp*.50;
+ const b=world.boss;if(b){b.age+=dt;b.spin+=dt;if(b.enter){b.y=Math.min(b.y+90*dt,94);if(b.y>=94)b.enter=false}else{b.motionAge+=dt;b.x=W/2+Math.sin(b.motionAge*.9)*(stageIndex===3?90:105);b.y=94+Math.sin(b.motionAge*.65)*12;b.fire-=dt;b.second-=dt;const second=b.hp<b.maxHp*.50;
  if(b.fire<=0){const lv=stageIndex;
  if(lv===0){shootFan(b.x,b.y+25,5,127,.0,.23,'#ffba83')}
  else if(lv===1){shootAt(b.x,b.y+28,141,.19,5,'#ff8f90');shootFan(b.x-29,b.y+16,3,115,.2,.27,'#ffd18e')}
