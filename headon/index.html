@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
 <meta name="theme-color" content="#0b1539">
-<title>HEAD ON — レトロ・ドットレーサー v1.2</title>
+<title>HEAD ON — レトロ・ドットレーサー v1.3</title>
 <style>
 :root{color-scheme:dark;--bg:#090f25;--text:#edf5ff;--muted:#a6bce1;--blue:#86bdff;--yellow:#f8db77;--red:#fd6f77}
 *{box-sizing:border-box}html{overscroll-behavior:none;background:var(--bg)}
@@ -30,6 +30,8 @@ canvas{display:block;width:100%;height:auto;aspect-ratio:432 / 568;background:#0
 .statusline{margin:0 0 7px;text-align:center;min-height:13px;line-height:1.2}
 .help b{color:#ffe18b}
 .pad{display:grid;grid-template-columns:1fr 1.14fr 1fr;gap:9px;touch-action:none;user-select:none}
+/* Prevent iOS long-press text selection on arcade controls, including nested labels. */
+.pad,.pad *,button,button *{-webkit-user-select:none!important;user-select:none!important;-webkit-touch-callout:none;-webkit-user-drag:none}
 .control{border-radius:14px;border:1px solid #7c9ecb;min-height:62px;padding:8px 4px;background:linear-gradient(#354c78,#182e51);color:#fff;box-shadow:inset 0 1px #ffffff24,0 4px #0b1930;font-family:inherit;font-weight:1000;font-size:16px;cursor:pointer;touch-action:none;-webkit-tap-highlight-color:transparent}
 .control:active,.control.active{transform:translateY(3px);box-shadow:inset 0 1px #ffffff24,0 1px #0b1930;background:linear-gradient(#48709e,#203960)}
 .control small{display:block;color:#c6d9f8;font-size:10px;font-weight:700;margin-top:1px}
@@ -45,7 +47,7 @@ canvas{display:block;width:100%;height:auto;aspect-ratio:432 / 568;background:#0
 </head>
 <body>
 <main class="app">
-<header class="header"><div><h1>HEAD ON</h1><small>RETRO DOT RACER</small></div><span class="edition">v1.2 · ARCADE STYLE</span></header>
+<header class="header"><div><h1>HEAD ON</h1><small>RETRO DOT RACER</small></div><span class="edition">v1.3 · ARCADE STYLE</span></header>
 <section class="hud" aria-label="スコア">
 <div class="stat"><label>SCORE</label><span id="score">00000</span></div>
 <div class="stat"><label>BEST</label><span id="best">00000</span></div>
@@ -195,6 +197,8 @@ function askLane(d){
 el('inner').addEventListener('click',()=>askLane(1));
 el('outer').addEventListener('click',()=>askLane(-1));
 const boostButton=el('boost');
+// Safari may start a text selection or callout during a long press.
+for(const eventName of ['selectstart','dragstart','contextmenu']){document.querySelector('.pad').addEventListener(eventName,e=>e.preventDefault())}
 function boostOn(v){const prev=boosting;boosting=!!v&&mode==='running';if(boosting&&!prev&&difficulty==='easy'&&player){player.speed=Math.max(player.speed,normalSpeed)}boostButton.classList.toggle('active',boosting)}
 boostButton.addEventListener('pointerdown',e=>{e.preventDefault();boostButton.setPointerCapture(e.pointerId);boostOn(true)});
 for(const ev of ['pointerup','pointercancel','lostpointercapture'])boostButton.addEventListener(ev,()=>boostOn(false));
