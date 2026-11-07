@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
 <meta name="theme-color" content="#0b142a">
-<title>NUMBER BALL v1.3 — 1から9のナンバーハント</title>
+<title>NUMBER BALL v1.3.1 — 1から9のナンバーハント</title>
 <style>
 :root{color-scheme:dark;--bg:#0b142a;--panel:#14233c;--line:#385575;--text:#f1f7ff;--muted:#a4bbce;--gold:#ffe08d;--cyan:#8ff2e7;--red:#ff7d90}
 *{box-sizing:border-box}
@@ -37,6 +37,9 @@ canvas{display:block;width:100%;height:auto;aspect-ratio:420/560;border-radius:9
 @media(max-height:720px){.app{padding-top:6px}.heading{margin-bottom:5px}.hud{margin-bottom:5px}.stage-shell{width:min(100%,calc((100dvh - 230px) * .75))}.status{margin:7px 1px 5px;min-height:35px}.turn-button{min-height:64px}.instructions{font-size:10px;margin-top:7px}}
 @media(max-height:640px){.instructions{display:none}.turn-button{min-height:60px}.stage-shell{width:min(100%,calc((100dvh - 220px) * .75))}}
 @media(min-width:700px){.app{padding-top:22px}.stage-shell{width:min(100%,380px)}}
+
+/* touch-guard-v1: avoid iOS text selection and native callouts on controls */
+.turn-button,.turn-button *{-webkit-user-select:none!important;user-select:none!important;-webkit-touch-callout:none!important;-webkit-user-drag:none;touch-action:none;}
 </style>
 </head>
 <body>
@@ -53,6 +56,10 @@ canvas{display:block;width:100%;height:auto;aspect-ratio:420/560;border-radius:9
  <p class="instructions">玉は<b>自動で前進</b>。ボタンを離すと直進します。<br><b>光る数字</b>を1から順番に集めよう！間違えると180°反転。<b>3回で終了</b>。</p>
 </main>
 <script>
+// touch-guard-v1: suppress native text selection/drag/context menu for .turn-button
+document.querySelectorAll('.turn-button').forEach(control=>{
+ for(const type of ['selectstart','dragstart','contextmenu'])control.addEventListener(type,event=>event.preventDefault());
+});
 (()=>{'use strict';
 const canvas=document.getElementById('game'),ctx=canvas.getContext('2d'),el=id=>document.getElementById(id);
 const W=420,H=560,R=19,PLAYER_R=15,SPEED=146,TURN=3.18,PI=Math.PI,TAU=PI*2;
