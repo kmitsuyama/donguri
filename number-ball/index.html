@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
 <meta name="theme-color" content="#0b142a">
-<title>NUMBER BALL v1.3.1 — 1から9のナンバーハント</title>
+<title>NUMBER BALL v1.3.2 — 1から9のナンバーハント</title>
 <style>
 :root{color-scheme:dark;--bg:#0b142a;--panel:#14233c;--line:#385575;--text:#f1f7ff;--muted:#a4bbce;--gold:#ffe08d;--cyan:#8ff2e7;--red:#ff7d90}
 *{box-sizing:border-box}
@@ -143,6 +143,25 @@ function setTurn(v){turning=!!v&&state==='running';el('turn').classList.toggle('
 const control=el('turn');
 control.addEventListener('pointerdown',e=>{e.preventDefault();try{control.setPointerCapture(e.pointerId)}catch(_){}setTurn(true)});
 for(const type of ['pointerup','pointercancel','lostpointercapture'])control.addEventListener(type,()=>setTurn(false));
+// iOS Safari may still display the native text-selection loupe on a long press
+// or tap-and-hold gesture despite user-select:none and a pointerdown handler.
+// Prevent the touch default immediately (non-passive) before WebKit starts it.
+// Handle touch press/release directly as well: some WebKit versions suppress
+// compatibility pointer/mouse events after a cancelled touchstart.
+let activeTurnTouch=null;
+control.addEventListener('touchstart',e=>{
+ if(e.cancelable)e.preventDefault();
+ if(activeTurnTouch===null&&e.changedTouches.length){
+  activeTurnTouch=e.changedTouches[0].identifier;setTurn(true);
+ }
+},{passive:false});
+control.addEventListener('touchmove',e=>{if(e.cancelable)e.preventDefault()},{passive:false});
+for(const type of ['touchend','touchcancel'])control.addEventListener(type,e=>{
+ if(e.cancelable)e.preventDefault();
+ if(activeTurnTouch!==null&&Array.from(e.changedTouches).some(t=>t.identifier===activeTurnTouch)){
+  activeTurnTouch=null;setTurn(false);
+ }
+},{passive:false});
 // Physical keys and touchscreen are both supported, without covering the game area.
 const held=new Set();
 window.addEventListener('keydown',e=>{if(['Space','ArrowRight','Enter'].includes(e.code))e.preventDefault();
