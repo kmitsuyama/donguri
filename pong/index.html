@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
 <meta name="theme-color" content="#0a0c10">
-<title>PONG! — レトロ・ピンポン v1.1</title>
+<title>PONG! — レトロ・ピンポン v1.1.1</title>
 <style>
 :root{color-scheme:dark;--bg:#090b0e;--paper:#f5f5e9;--soft:#bdc5c9;--border:#4f595e;--gold:#efdc9b}
 *{box-sizing:border-box}
@@ -60,6 +60,9 @@ canvas{display:block;width:100%;height:auto;aspect-ratio:720 / 560;touch-action:
 @media(max-height:730px){.app{padding-top:6px}.modes{margin-bottom:6px}.hud{margin:7px 0}.instructions{margin:8px 2px 0}.cabinet{padding:5px}.toolbar button{min-height:40px}.touch-area{height:94px}.touch-controls{margin:7px auto 8px}.touch-title{margin-bottom:4px}.touch-lane{padding:5px 8px 7px}.footer{display:none}}
 @media(max-height:650px){.instructions{display:none}.touch-area{height:86px}.brand small{display:none}}
 @media(min-width:780px){.app{padding-top:25px}}
+
+/* touch-guard-v1: avoid iOS text selection and native callouts on controls */
+.touch-area,.touch-area *{-webkit-user-select:none!important;user-select:none!important;-webkit-touch-callout:none!important;-webkit-user-drag:none;touch-action:none;}
 </style>
 </head>
 <body>
@@ -98,6 +101,10 @@ canvas{display:block;width:100%;height:auto;aspect-ratio:720 / 560;touch-action:
 <p class="footer">スマホ・PC対応 / 1人対戦または同じ画面で2人対戦</p>
 </main>
 <script>
+// touch-guard-v1: suppress native text selection/drag/context menu for .touch-area
+document.querySelectorAll('.touch-area').forEach(control=>{
+ for(const type of ['selectstart','dragstart','contextmenu'])control.addEventListener(type,event=>event.preventDefault());
+});
 (()=>{'use strict';
 const canvas=document.getElementById('game'),ctx=canvas.getContext('2d');
 const el=id=>document.getElementById(id);
