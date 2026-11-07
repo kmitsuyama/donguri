@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
 <meta name="theme-color" content="#0b1539">
-<title>HEAD ON — レトロ・ドットレーサー v1.1</title>
+<title>HEAD ON — レトロ・ドットレーサー v1.2</title>
 <style>
 :root{color-scheme:dark;--bg:#090f25;--text:#edf5ff;--muted:#a6bce1;--blue:#86bdff;--yellow:#f8db77;--red:#fd6f77}
 *{box-sizing:border-box}html{overscroll-behavior:none;background:var(--bg)}
@@ -24,6 +24,10 @@ canvas{display:block;width:100%;height:auto;aspect-ratio:432 / 568;background:#0
 .toolbar{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:10px 0 8px}
 .small-btn{height:35px;border:1px solid #708bb8;background:#1a3157;color:#dceaff;padding:0 14px;border-radius:9px;font-weight:900;cursor:pointer;font-size:13px}
 .help{font-size:10px;font-weight:800;color:#d3e4ff}
+.difficulty{display:flex;align-items:center;gap:4px;justify-content:center;min-width:0;font-size:10px;font-weight:900;color:#d0e0fa;white-space:nowrap}
+.difficulty select{min-width:79px;max-width:95px;height:35px;padding:4px 6px;border:1px solid #9bbbea;background:#183358;color:#fff0b8;border-radius:8px;font:900 12px system-ui,sans-serif;cursor:pointer}
+.difficulty select:disabled{opacity:.65;cursor:default}
+.statusline{margin:0 0 7px;text-align:center;min-height:13px;line-height:1.2}
 .help b{color:#ffe18b}
 .pad{display:grid;grid-template-columns:1fr 1.14fr 1fr;gap:9px;touch-action:none;user-select:none}
 .control{border-radius:14px;border:1px solid #7c9ecb;min-height:62px;padding:8px 4px;background:linear-gradient(#354c78,#182e51);color:#fff;box-shadow:inset 0 1px #ffffff24,0 4px #0b1930;font-family:inherit;font-weight:1000;font-size:16px;cursor:pointer;touch-action:none;-webkit-tap-highlight-color:transparent}
@@ -41,7 +45,7 @@ canvas{display:block;width:100%;height:auto;aspect-ratio:432 / 568;background:#0
 </head>
 <body>
 <main class="app">
-<header class="header"><div><h1>HEAD ON</h1><small>RETRO DOT RACER</small></div><span class="edition">v1.1 · ARCADE STYLE</span></header>
+<header class="header"><div><h1>HEAD ON</h1><small>RETRO DOT RACER</small></div><span class="edition">v1.2 · ARCADE STYLE</span></header>
 <section class="hud" aria-label="スコア">
 <div class="stat"><label>SCORE</label><span id="score">00000</span></div>
 <div class="stat"><label>BEST</label><span id="best">00000</span></div>
@@ -49,13 +53,14 @@ canvas{display:block;width:100%;height:auto;aspect-ratio:432 / 568;background:#0
 <div class="stat"><label>のこり</label><span id="lives" class="red">♥ ♥ ♥</span></div>
 </section>
 <div class="stage-wrap"><canvas id="game" width="432" height="568" aria-label="5本のコースでドットを回収し、赤い敵車を避けるゲーム"></canvas></div>
-<div class="toolbar"><button class="small-btn" id="start">▶ スタート</button><span class="help" id="status">ドットを全部集めよう！</span><button class="small-btn" id="sound" aria-label="効果音を切り替え">♪ ON</button></div>
+<div class="toolbar"><button class="small-btn" id="start">▶ スタート</button><label class="difficulty" for="difficulty">難易度 <select id="difficulty" aria-label="難易度"><option value="normal">ふつう</option><option value="easy">やさしい</option></select></label><button class="small-btn" id="sound" aria-label="効果音を切り替え">♪ ON</button></div>
+<div class="help statusline" id="status" role="status">ドットを全部集めよう！</div>
 <div class="pad" aria-label="走行操作">
 <button class="control" id="inner" aria-label="内側の車線に移る">◀ 内側<small>車線変更</small></button>
 <button class="control boost" id="boost" aria-label="押している間加速">⚡ 加速<small>押している間</small></button>
 <button class="control" id="outer" aria-label="外側の車線に移る">外側 ▶<small>車線変更</small></button>
 </div>
-<p class="tips"><strong>遊び方：</strong>自車は自動で反時計回り。<strong>上下左右の4か所</strong>の切れ目で車線変更できます。<br>内側・外側を押して行き先を予約、加速は長押し。赤い車とは正面衝突しないように！</p>
+<p class="tips"><strong>遊び方：</strong>スタート前に難易度を選べます。「やさしい」は自車・敵車の通常速度が30％ダウン、加速中の自車は「ふつう」と同じ速さ。自車は自動で反時計回り。<strong>上下左右の4か所</strong>の切れ目で車線変更できます。<br>内側・外側を押して行き先を予約、加速は長押し。赤い車とは正面衝突しないように！</p>
 </main>
 <script>
 (()=>{'use strict';
@@ -112,15 +117,21 @@ function changeLane(entity,newLane,gate){
 }
 const colors={blue:'#80bcff',pale:'#d8ecff',gold:'#ffe69a',red:'#ff667c'};
 let mode='intro',level=1,score=0,best=0,lives=3,nextLife=5000;
-let player,enemies=[],dots=[],wantLane=2,boosting=false,audio=null,soundOn=true;
+let player,enemies=[],dots=[],wantLane=2,boosting=false,audio=null,soundOn=true,difficulty='normal';
 let clock=0,lastTime=0,cooldown=0,notice='',noticeTime=0,pointsToNext=0;
-try{best=Number(localStorage.getItem('headon_mobile_best'))||0}catch(e){}
+try{best=Number(localStorage.getItem('headon_mobile_best'))||0;difficulty=localStorage.getItem('headon_mobile_difficulty')==='easy'?'easy':'normal'}catch(e){}
+const normalSpeed=112,boostSpeed=216;
+const speedFactor=()=>difficulty==='easy'?.7:1;
+const enemyBaseSpeed=seed=>(84+Math.min(65,(level-1)*9)+seed*9);
+el('difficulty').value=difficulty;
+el('difficulty').addEventListener('change',()=>{if(mode!=='intro'&&mode!=='over')return;difficulty=el('difficulty').value==='easy'?'easy':'normal';try{localStorage.setItem('headon_mobile_difficulty',difficulty)}catch(e){};updateHUD()});
 function updateHUD(){
  el('score').textContent=String(score).padStart(5,'0');
  el('best').textContent=String(best).padStart(5,'0');
  el('level').textContent=String(((level-1)%8)+1).padStart(2,'0');
  el('lives').textContent=lives?'♥ '.repeat(lives).trim():'—';
  el('start').textContent=mode==='running'?'Ⅱ 一時停止':mode==='paused'?'▶ 再開':mode==='over'?'↻ もう一度':'▶ スタート';
+ el('difficulty').disabled=mode!=='intro'&&mode!=='over';
  let s='';if(mode==='running'){s=wantLane!==player.lane?'次の切れ目で '+(wantLane+1)+'車線目':'ドット残り '+pointsToNext;}
  else if(mode==='intro')s='ドットを全部集めよう！';
  else if(mode==='over')s='ゲームオーバー';
@@ -162,9 +173,9 @@ function makeDots(){
  pointsToNext=dots.length;
 }
 function placeCars(){
- player={lane:2,renderLane:2,u:.14,speed:112,gateLock:-1,invuln:2.2};wantLane=2;
+ player={lane:2,renderLane:2,u:.14,speed:normalSpeed*speedFactor(),gateLock:-1,invuln:2.2};wantLane=2;
  const count=Math.min(3,1+Math.floor((level-1)/2));
- enemies=Array.from({length:count},(_,i)=>({lane:clamp([0,4,1][i],0,4),renderLane:clamp([0,4,1][i],0,4),u:norm(.62+i*.18),speed:84+Math.min(65,(level-1)*9)+i*9,gateLock:-1,seed:i,glint:Math.random()*10}));
+ enemies=Array.from({length:count},(_,i)=>({lane:clamp([0,4,1][i],0,4),renderLane:clamp([0,4,1][i],0,4),u:norm(.62+i*.18),speed:enemyBaseSpeed(i)*speedFactor(),gateLock:-1,seed:i,glint:Math.random()*10}));
 }
 function initStage(){makeDots();placeCars();boosting=false;cooldown=0;updateHUD()}
 function beginGame(){score=0;lives=3,nextLife=5000,level=1,clock=0,notice='',noticeTime=0;mode='running';initStage();sfx('clear');updateHUD()}
@@ -184,7 +195,7 @@ function askLane(d){
 el('inner').addEventListener('click',()=>askLane(1));
 el('outer').addEventListener('click',()=>askLane(-1));
 const boostButton=el('boost');
-function boostOn(v){boosting=!!v&&mode==='running';boostButton.classList.toggle('active',boosting)}
+function boostOn(v){const prev=boosting;boosting=!!v&&mode==='running';if(boosting&&!prev&&difficulty==='easy'&&player){player.speed=Math.max(player.speed,normalSpeed)}boostButton.classList.toggle('active',boosting)}
 boostButton.addEventListener('pointerdown',e=>{e.preventDefault();boostButton.setPointerCapture(e.pointerId);boostOn(true)});
 for(const ev of ['pointerup','pointercancel','lostpointercapture'])boostButton.addEventListener(ev,()=>boostOn(false));
 window.addEventListener('blur',()=>boostOn(false));
@@ -207,11 +218,11 @@ cv.addEventListener('pointercancel',()=>swipe=null);
 function carXY(car){return at(car.renderLane,car.u)}
 function updateCar(car,dt,isPlayer){
  if(isPlayer){
-   const target=boosting?216:112,rate=boosting?3:10;
+   const target=boosting?boostSpeed:normalSpeed*speedFactor(),rate=boosting?3:10;
    car.speed+=(target-car.speed)*Math.min(1,dt*rate);
    car.invuln=Math.max(0,car.invuln-dt);
  }else{
-   car.speed=84+Math.min(65,(level-1)*9)+car.seed*9;
+   car.speed=enemyBaseSpeed(car.seed)*speedFactor();
  }
  car.u=norm(car.u+(isPlayer?1:-1)*car.speed*dt/track(car.lane).length);
  const gate=getGate(car.lane,car.u);
@@ -373,7 +384,7 @@ function tick(t){
 }
 // Allows automated browser smoke tests without affecting the gameplay UI.
 if(new URLSearchParams(location.search).has('test')){
- window.__headonTest={state:()=>({mode,level,score,lives,pointsToNext,wantLane,player:player&&{...player},enemies:enemies.map(e=>({...e}))}),
+ window.__headonTest={state:()=>({mode,level,score,lives,pointsToNext,wantLane,difficulty,boosting,player:player&&{...player},enemies:enemies.map(e=>({...e}))}),
  forceClear:()=>{for(const d of dots)d.alive=false;pointsToNext=0},
  gate:(lane,u)=>getGate(lane,u),
  at:(lane,u)=>at(lane,u),
