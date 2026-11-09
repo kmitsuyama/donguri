@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
 <meta name="theme-color" content="#132239">
-<title>DIGITAL INVADER v1.0 — ゲーム電卓</title>
+<title>DIGITAL INVADER v1.1 — ゲーム電卓</title>
 <style>
 :root{color-scheme:dark;--ink:#e8f1f9;--sub:#b3c5d5;--lcd:#afbfaa;--seg:#263c31}
 *{box-sizing:border-box}
@@ -83,7 +83,7 @@ button:focus-visible{outline:3px solid #ffe390;outline-offset:3px}
 </head>
 <body>
 <main class="app">
-  <header class="head"><div><h1>DIGITAL INVADER</h1><p>ゲーム電卓の数字インベーダー</p></div><span class="tag">1980 STYLE · v1.0</span></header>
+  <header class="head"><div><h1>DIGITAL INVADER</h1><p>ゲーム電卓の数字インベーダー</p></div><span class="tag">1980 STYLE · v1.1</span></header>
   <div class="top-tools"><button id="start" type="button" class="mini start">▶ GAME START</button><button id="sound" type="button" class="mini">♪ SOUND ON</button></div>
   <section class="stats" aria-label="ゲームの状態">
     <div class="stat"><small>SCORE</small><strong id="score">000000</strong></div>
@@ -106,7 +106,7 @@ button:focus-visible{outline:3px solid #ffe390;outline-offset:3px}
     </div>
   </section>
   <div class="status" role="status" aria-live="polite"><strong id="statusTitle">デジタルインベーダー</strong><span id="statusText">GAME STARTを押して挑戦！</span></div>
-  <div class="notes"><p><strong>AIM</strong> で 0→1→…→9→n→0 と切り替え、<strong>FIRE</strong> で同じ数字を撃破！</p><p>1ラウンド16体・30発。数字の合計が10の倍数になると <strong>UFO「n」</strong> が出現（撃墜＋300点）。</p></div>
+  <div class="notes"><p><strong>AIM</strong> で 0→1→…→9→n→0 と切り替え、<strong>FIRE</strong> で同じ数字を撃破！ 消すと左側の数字が右へ詰まります。</p><p>1ラウンド16体・30発。数字の合計が10の倍数になると <strong>UFO「n」</strong> が出現（撃墜＋300点）。</p></div>
   <div class="footer">スマホ・PC対応／オリジナルのゲームルールを参考にした非公式再現版</div>
 </main>
 <script>
@@ -150,7 +150,12 @@ function advance(){if(phase!=='running')return;
 function aimStep(){if(phase==='over'||phase==='intro'){return}if(phase==='paused')return;aim=(aim+1)%11;sfx(430+aim*26,.033,'square',.014);updateUI()}
 function fire(){if(phase!=='running')return;if(ammo<=0)return;ammo--;
  const target=aim===10?'n':String(aim);let index=slots.indexOf(target);
- if(index>=0){slots[index]=null;defeated++;
+ if(index>=0){
+  // After a hit, all invaders to the left slide right to close the gap.
+  // The empty cell is always moved to the left edge of the display.
+  for(let i=index;i>0;i--)slots[i]=slots[i-1];
+  slots[0]=null;
+  defeated++;
   let points=target==='n'?300:(stage===1?(index+1)*10:(index+1)*20);
   score+=points;saveBest();sfx(target==='n'?1040:680,.08,'square',.022);message(target==='n'?'UFO撃破！ +300':`HIT! +${points}`,target==='n'?'ボーナス獲得！':`数字「${target}」を撃破。`,.72);
   if(target!=='n'){const previous=killSum;killSum+=Number(target);if(killSum>0&&Math.floor(killSum/10)>Math.floor(previous/10)&&spawned<CAPACITY){ufoPending=true}}
