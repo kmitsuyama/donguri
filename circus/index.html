@@ -4,14 +4,14 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
 <meta name="theme-color" content="#17162d">
-<title>CIRCUS! — バルーン・ショー v1.2.1</title>
+<title>CIRCUS! — バルーン・ショー v1.2.2</title>
 <style>
 :root { color-scheme:dark; --bg:#17162d; --cream:#fff2d8; --gold:#ffd87b; --pink:#f25c6f; --stroke:#413a57; }
 * { box-sizing:border-box; }
 html { background:var(--bg); overscroll-behavior:none; }
 body { margin:0; min-height:100svh; font-family:system-ui,-apple-system,"Hiragino Kaku Gothic ProN","Noto Sans JP",sans-serif; color:var(--cream); background:radial-gradient(ellipse at 50% -30%,#563357 0,#26213d 60%,#161527 100%); }
 button { font:inherit; -webkit-tap-highlight-color:transparent; touch-action:manipulation; }
-.app { width:min(100%,470px); margin:0 auto; padding:10px 11px calc(10px + env(safe-area-inset-bottom)); }
+.app { width:min(100%,470px); min-height:100svh; margin:0 auto; padding:10px 11px calc(10px + env(safe-area-inset-bottom)); display:flex; flex-direction:column; }
 .masthead { display:flex; align-items:flex-end; justify-content:space-between; gap:12px; margin:0 3px 8px; }
 .brand { display:flex; align-items:baseline; gap:8px; min-width:0; }
 .brand strong { font-weight:1000; font-size:clamp(25px,6vw,34px); line-height:1; font-family:Georgia,serif; color:#ffe7a7; letter-spacing:.04em; text-shadow:2px 2px 0 #ba5c59,0 0 24px #e95a4a40; }
@@ -21,22 +21,23 @@ button { font:inherit; -webkit-tap-highlight-color:transparent; touch-action:man
 .hudbox { border:1px solid #655471; border-radius:9px; background:#0d1023ab; text-align:center; padding:6px 4px 5px; box-shadow:inset 0 1px #ffffff16; }
 .hudbox .label { display:block; font-size:10px; letter-spacing:.08em; font-weight:800; color:#c9b5cb; }
 .hudbox .value { display:block; color:#ffebad; font-size:20px; font-weight:900; line-height:1.25; font-variant-numeric:tabular-nums; }
-.hudbox .value.lives { letter-spacing:1px; font-size:17px; color:#ff7e8b; }
+.hudbox .value.lives { letter-spacing:0; font-size:clamp(13px,3.5vw,17px); color:#ff7e8b; white-space:nowrap; }
 .stage-frame { position:relative; background:#090f28; padding:5px; border-radius:14px; border:2px solid #d9a75d; box-shadow:0 0 0 2px #543e59, 0 16px 45px #0008; overflow:hidden; }
 canvas { width:100%; height:auto; display:block; border-radius:8px; background:#101a31; touch-action:none; user-select:none; -webkit-user-select:none; }
-.controls { margin-top:10px; display:flex; align-items:center; gap:8px; }
-.action { min-height:42px; border-radius:10px; padding:0 12px; cursor:pointer; font-weight:900; border:1px solid #ebcf90; background:linear-gradient(#ffe9a9,#eab76d); color:#38233e; box-shadow:0 3px 0 #8c6448; }
+.controls { margin-top:10px; display:flex; align-items:center; gap:8px; min-height:54px; }
+.action { min-height:54px; border-radius:12px; padding:0 12px; cursor:pointer; font-weight:900; border:1px solid #ebcf90; background:linear-gradient(#ffe9a9,#eab76d); color:#38233e; box-shadow:0 3px 0 #8c6448; }
 .action:active,.arrow:active { transform:translateY(2px); box-shadow:0 1px 0 #8c6448; }
 .action.secondary { background:#292842; border:1px solid #81708a; color:#f8e5d3; box-shadow:0 3px 0 #171326; }
 .action[disabled] { opacity:.5; }
-.pad { min-width:0; height:42px; flex:1; position:relative; border:1px solid #7d708b; border-radius:12px; background:linear-gradient(90deg,#302c48,#585071,#302c48); overflow:hidden; touch-action:none; cursor:ew-resize; }
-.pad::before { content:""; position:absolute; left:10%; right:10%; top:20px; border-top:2px dashed #c8b7cc88; }
-.knob { position:absolute; top:4px; left:50%; transform:translateX(-50%); height:32px; width:43px; border-radius:9px; border:2px solid #ffdf9a; background:linear-gradient(#ffbb7d,#e1696a); box-shadow:0 2px 7px #101027; pointer-events:none; }
-.pad-label { position:absolute; inset:0; display:flex; justify-content:center; align-items:center; font-size:11px; font-weight:900; color:#fff7eb; text-shadow:0 1px 3px #1b122e,0 0 4px #1b122e; pointer-events:none; }
+.pad { min-width:0; height:54px; flex:1; position:relative; border:1px solid #7d708b; border-radius:14px; background:linear-gradient(90deg,#302c48,#585071,#302c48); overflow:hidden; touch-action:none; cursor:ew-resize; }
+.pad::before { content:""; position:absolute; left:10%; right:10%; top:26px; border-top:2px dashed #c8b7cc88; }
+.knob { position:absolute; top:5px; left:50%; transform:translateX(-50%); height:42px; width:52px; border-radius:11px; border:2px solid #ffdf9a; background:linear-gradient(#ffbb7d,#e1696a); box-shadow:0 2px 7px #101027; pointer-events:none; }
+.pad-label { position:absolute; inset:0; display:flex; justify-content:center; align-items:center; font-size:12px; font-weight:900; color:#fff7eb; text-shadow:0 1px 3px #1b122e,0 0 4px #1b122e; pointer-events:none; }
 .foot { margin:10px 3px 0; color:#d2c7d9; font-size:11px; line-height:1.6; text-align:center; }
 .foot b { color:#ffe19e; }
-@media (max-width:370px) { .brand small { font-size:10px } .tag { display:none } .action { padding:0 10px; } .hudbox .value { font-size:17px; } }
+@media (max-width:370px) { .brand small { font-size:10px } .tag { display:none } .action { padding:0 10px; min-height:50px; } .hudbox .value { font-size:17px; } .pad { height:50px; } .knob { height:38px; width:48px; } }
 @media (min-width:700px) { .app { padding-top:25px; } }
+@media (min-height:820px) { .controls { min-height:62px; } .action { min-height:62px; } .pad { height:62px; } .pad::before { top:30px; } .knob { top:6px; height:48px; width:56px; } .pad-label { font-size:13px; } }
 
 /* touch-guard-v1: avoid iOS text selection and native callouts on controls */
 .pad,.pad *{-webkit-user-select:none!important;user-select:none!important;-webkit-touch-callout:none!important;-webkit-user-drag:none;touch-action:none;}
@@ -83,7 +84,7 @@ let beepOn=true,audio=null,holdDir=0,lastFrame=0,rafId=null,gameOverPrompt=0;
 const clownStyles=[{suit:'#ff7581',hat:'#fbd774'},{suit:'#61cae9',hat:'#f7e2c0'}];
 function clamp(v,a,b){ return Math.max(a,Math.min(b,v)); }
 try {best=Number(localStorage.getItem('circus_mobile_best_v1'))||0;}catch(e){}
-function hud(){ $('score').textContent=String(score).padStart(5,'0'); $('best').textContent=String(best).padStart(5,'0'); $('lives').textContent='♥ '.repeat(Math.max(0,lives)).trim()||'—'; $('start').textContent=mode==='running'?'一時停止': mode==='paused'?'再開': mode==='over'?'もう一度':'スタート'; }
+function hud(){ $('score').textContent=String(score).padStart(5,'0'); $('best').textContent=String(best).padStart(5,'0'); $('lives').textContent='♥'.repeat(Math.max(0,lives))||'—'; $('start').textContent=mode==='running'?'一時停止': mode==='paused'?'再開': mode==='over'?'もう一度':'スタート'; }
 function note(frequency=500,duration=.11,type='sine',volume=.08,offset=0){
  if(!beepOn)return;
  try {
