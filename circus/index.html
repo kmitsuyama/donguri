@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
 <meta name="theme-color" content="#17162d">
-<title>CIRCUS! — バルーン・ショー v1.2.2</title>
+<title>CIRCUS! — バルーン・ショー v1.2.3</title>
 <style>
 :root { color-scheme:dark; --bg:#17162d; --cream:#fff2d8; --gold:#ffd87b; --pink:#f25c6f; --stroke:#413a57; }
 * { box-sizing:border-box; }
@@ -38,6 +38,24 @@ canvas { width:100%; height:auto; display:block; border-radius:8px; background:#
 @media (max-width:370px) { .brand small { font-size:10px } .tag { display:none } .action { padding:0 10px; min-height:50px; } .hudbox .value { font-size:17px; } .pad { height:50px; } .knob { height:38px; width:48px; } }
 @media (min-width:700px) { .app { padding-top:25px; } }
 @media (min-height:820px) { .controls { min-height:62px; } .action { min-height:62px; } .pad { height:62px; } .pad::before { top:30px; } .knob { top:6px; height:48px; width:56px; } .pad-label { font-size:13px; } }
+
+/* Fill leftover portrait-screen height with the horizontal-control lane, not the playfield. */
+@supports (height:100dvh) { .app { min-height:100dvh; } }
+.stage-frame { flex:none; }
+.controls { flex:1 0 76px; min-height:76px; align-items:stretch; }
+.action { flex:0 0 auto; }
+.pad { height:auto; min-height:0; }
+.pad::before { top:50%; }
+.knob { top:50%; height:min(70px,60%); min-height:31px; width:clamp(43px,11vw,58px); transform:translate(-50%,-50%); }
+.foot { flex:none; }
+.hud { grid-template-columns:repeat(3,minmax(0,1fr)); }
+.hudbox { min-width:0; }
+.hudbox .value.lives { white-space:nowrap; letter-spacing:0; overflow:hidden; }
+@media (max-height:700px) {
+ .stage-frame { width:min(100%, max(210px,calc((100dvh - 230px) * .7))); margin:0 auto; }
+ .controls { flex:0 0 56px; min-height:56px; margin-top:7px; }
+ .foot { font-size:10px; line-height:1.35; margin-top:7px; }
+}
 
 /* touch-guard-v1: avoid iOS text selection and native callouts on controls */
 .pad,.pad *{-webkit-user-select:none!important;user-select:none!important;-webkit-touch-callout:none!important;-webkit-user-drag:none;touch-action:none;}
@@ -84,7 +102,24 @@ let beepOn=true,audio=null,holdDir=0,lastFrame=0,rafId=null,gameOverPrompt=0;
 const clownStyles=[{suit:'#ff7581',hat:'#fbd774'},{suit:'#61cae9',hat:'#f7e2c0'}];
 function clamp(v,a,b){ return Math.max(a,Math.min(b,v)); }
 try {best=Number(localStorage.getItem('circus_mobile_best_v1'))||0;}catch(e){}
-function hud(){ $('score').textContent=String(score).padStart(5,'0'); $('best').textContent=String(best).padStart(5,'0'); $('lives').textContent='♥'.repeat(Math.max(0,lives))||'—'; $('start').textContent=mode==='running'?'一時停止': mode==='paused'?'再開': mode==='over'?'もう一度':'スタート'; }
+// Fit all hearts inside the life box even when nine lives are accumulated.
+const lifeMeasure=document.createElement('canvas').getContext('2d');
+function updateLives(){
+ const node=$('lives'), count=Math.max(0,lives), symbols=count?'♥'.repeat(count):'—';
+ node.textContent=symbols;
+ node.setAttribute('aria-label',`残り ${count} 回`);
+ let size=17, room=Math.max(12,node.clientWidth-4);
+ if(lifeMeasure){
+  while(size>7){
+   lifeMeasure.font=`900 ${size}px system-ui`;
+   if(lifeMeasure.measureText(symbols).width<=room)break;
+   size-=.5;
+  }
+ }
+ node.style.fontSize=`${size}px`;
+}
+function hud(){ $('score').textContent=String(score).padStart(5,'0'); $('best').textContent=String(best).padStart(5,'0'); updateLives(); $('start').textContent=mode==='running'?'一時停止': mode==='paused'?'再開': mode==='over'?'もう一度':'スタート'; }
+window.addEventListener('resize',updateLives);
 function note(frequency=500,duration=.11,type='sine',volume=.08,offset=0){
  if(!beepOn)return;
  try {
